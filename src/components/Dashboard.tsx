@@ -1,325 +1,201 @@
-import { useEffect, useState } from 'react';
-import { db, Vendor, ComplianceControl, VAPTReport, PrivacyRecord } from '../lib/db';
-import { 
-  Building2, 
-  FileCheck, 
-  Shield, 
-  Lock, 
-  TrendingUp, 
-  AlertTriangle,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { Shield, Users, FileCheck, Bug, Lock, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export function Dashboard() {
-  const [stats, setStats] = useState({
-    vendors: { total: 0, pending: 0, approved: 0, rejected: 0 },
-    compliance: { total: 0, compliant: 0, partial: 0, nonCompliant: 0 },
-    vapt: { total: 0, draft: 0, inProgress: 0, completed: 0, critical: 0, high: 0 },
-    privacy: { ropa: 0, dpia: 0, dsar: 0 },
-  });
+  const stats = [
+    {
+      title: 'Compliance Score',
+      value: '87%',
+      change: '+5%',
+      trend: 'up',
+      icon: Shield,
+      color: 'from-blue-500 to-cyan-500',
+    },
+    {
+      title: 'Active Vendors',
+      value: '42',
+      change: '+3',
+      trend: 'up',
+      icon: Users,
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      title: 'Open VAPT Findings',
+      value: '17',
+      change: '-8',
+      trend: 'down',
+      icon: Bug,
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      title: 'DSAR Requests',
+      value: '5',
+      change: '+2',
+      trend: 'up',
+      icon: Lock,
+      color: 'from-green-500 to-emerald-500',
+    },
+  ];
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  const complianceData = [
+    { name: 'ISO 27001', completed: 145, total: 167 },
+    { name: 'ISO 27017', completed: 89, total: 112 },
+    { name: 'ISO 27018', completed: 72, total: 95 },
+    { name: 'RBI IT', completed: 56, total: 78 },
+    { name: 'DL SAR', completed: 34, total: 45 },
+  ];
 
-  const loadStats = async () => {
-    const vendors = await db.getAll<Vendor>('vendors');
-    const compliance = await db.getAll<ComplianceControl>('compliance');
-    const vapt = await db.getAll<VAPTReport>('vapt');
-    const privacy = await db.getAll<PrivacyRecord>('privacy');
+  const riskDistribution = [
+    { name: 'Critical', value: 3, color: '#ef4444' },
+    { name: 'High', value: 8, color: '#f97316' },
+    { name: 'Medium', value: 15, color: '#eab308' },
+    { name: 'Low', value: 24, color: '#22c55e' },
+  ];
 
-    // Calculate critical and high findings across all VAPT reports
-    let criticalCount = 0;
-    let highCount = 0;
-    vapt.forEach(report => {
-      criticalCount += report.findings.filter(f => f.severity === 'critical').length;
-      highCount += report.findings.filter(f => f.severity === 'high').length;
-    });
-
-    setStats({
-      vendors: {
-        total: vendors.length,
-        pending: vendors.filter(v => v.status === 'pending').length,
-        approved: vendors.filter(v => v.status === 'approved').length,
-        rejected: vendors.filter(v => v.status === 'rejected').length,
-      },
-      compliance: {
-        total: compliance.length,
-        compliant: compliance.filter(c => c.status === 'compliant').length,
-        partial: compliance.filter(c => c.status === 'partial').length,
-        nonCompliant: compliance.filter(c => c.status === 'non-compliant').length,
-      },
-      vapt: {
-        total: vapt.length,
-        draft: vapt.filter(v => v.status === 'draft').length,
-        inProgress: vapt.filter(v => v.status === 'in-progress').length,
-        completed: vapt.filter(v => v.status === 'completed').length,
-        critical: criticalCount,
-        high: highCount,
-      },
-      privacy: {
-        ropa: privacy.filter(p => p.type === 'ropa').length,
-        dpia: privacy.filter(p => p.type === 'dpia').length,
-        dsar: privacy.filter(p => p.type === 'dsar').length,
-      },
-    });
-  };
-
-  const complianceRate = stats.compliance.total > 0 
-    ? ((stats.compliance.compliant / stats.compliance.total) * 100).toFixed(1)
-    : '0';
+  const trendData = [
+    { month: 'Jan', compliance: 65, risk: 45 },
+    { month: 'Feb', compliance: 72, risk: 38 },
+    { month: 'Mar', compliance: 78, risk: 32 },
+    { month: 'Apr', compliance: 81, risk: 28 },
+    { month: 'May', compliance: 85, risk: 22 },
+    { month: 'Jun', compliance: 87, risk: 17 },
+  ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-gray-900 mb-2">GRC Dashboard</h1>
-        <p className="text-gray-600">Overview of your Governance, Risk, and Compliance metrics</p>
-      </div>
-
-      {/* Key Metrics */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Vendor Risk"
-          value={stats.vendors.total}
-          icon={Building2}
-          color="blue"
-          subtitle={`${stats.vendors.pending} pending review`}
-        />
-        <MetricCard
-          title="Compliance Rate"
-          value={`${complianceRate}%`}
-          icon={FileCheck}
-          color="green"
-          subtitle={`${stats.compliance.compliant}/${stats.compliance.total} controls`}
-        />
-        <MetricCard
-          title="VAPT Reports"
-          value={stats.vapt.total}
-          icon={Shield}
-          color="purple"
-          subtitle={`${stats.vapt.completed} completed`}
-        />
-        <MetricCard
-          title="Privacy Records"
-          value={stats.privacy.ropa + stats.privacy.dpia + stats.privacy.dsar}
-          icon={Lock}
-          color="indigo"
-          subtitle={`${stats.privacy.dsar} DSAR requests`}
-        />
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={index}
+              className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-slate-600 text-sm mb-1">{stat.title}</p>
+                  <p className="text-3xl text-slate-900 mb-2">{stat.value}</p>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp
+                      className={`w-4 h-4 ${
+                        stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                      } ${stat.trend === 'down' ? 'rotate-180' : ''}`}
+                    />
+                    <span
+                      className={`text-sm ${
+                        stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {stat.change}
+                    </span>
+                  </div>
+                </div>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Detailed Stats */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vendor Risk Status */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 className="w-6 h-6 text-blue-600" />
-            <h2 className="text-gray-900">Vendor Risk Assessment</h2>
-          </div>
-          <div className="space-y-3">
-            <StatRow
-              label="Pending Review"
-              value={stats.vendors.pending}
-              icon={Clock}
-              color="yellow"
-            />
-            <StatRow
-              label="Approved"
-              value={stats.vendors.approved}
-              icon={CheckCircle}
-              color="green"
-            />
-            <StatRow
-              label="Rejected"
-              value={stats.vendors.rejected}
-              icon={AlertTriangle}
-              color="red"
-            />
-          </div>
+        {/* Compliance Progress */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+          <h3 className="text-slate-900 mb-4 flex items-center gap-2">
+            <FileCheck className="w-5 h-5 text-blue-600" />
+            Compliance Framework Progress
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={complianceData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Bar dataKey="completed" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="total" fill="#e2e8f0" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Compliance Status */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <FileCheck className="w-6 h-6 text-green-600" />
-            <h2 className="text-gray-900">Compliance Status</h2>
-          </div>
-          <div className="space-y-3">
-            <StatRow
-              label="Compliant"
-              value={stats.compliance.compliant}
-              icon={CheckCircle}
-              color="green"
-            />
-            <StatRow
-              label="Partially Compliant"
-              value={stats.compliance.partial}
-              icon={TrendingUp}
-              color="yellow"
-            />
-            <StatRow
-              label="Non-Compliant"
-              value={stats.compliance.nonCompliant}
-              icon={AlertTriangle}
-              color="red"
-            />
-          </div>
-        </div>
-
-        {/* VAPT Status */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-6 h-6 text-purple-600" />
-            <h2 className="text-gray-900">VAPT Findings</h2>
-          </div>
-          <div className="space-y-3">
-            <StatRow
-              label="Critical Severity"
-              value={stats.vapt.critical}
-              icon={AlertTriangle}
-              color="red"
-            />
-            <StatRow
-              label="High Severity"
-              value={stats.vapt.high}
-              icon={AlertTriangle}
-              color="orange"
-            />
-            <StatRow
-              label="Reports Completed"
-              value={stats.vapt.completed}
-              icon={CheckCircle}
-              color="green"
-            />
-          </div>
-        </div>
-
-        {/* Privacy Management */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Lock className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-gray-900">Privacy Management</h2>
-          </div>
-          <div className="space-y-3">
-            <StatRow
-              label="ROPA Records"
-              value={stats.privacy.ropa}
-              icon={FileCheck}
-              color="indigo"
-            />
-            <StatRow
-              label="DPIA Assessments"
-              value={stats.privacy.dpia}
-              icon={Shield}
-              color="indigo"
-            />
-            <StatRow
-              label="DSAR Requests"
-              value={stats.privacy.dsar}
-              icon={Clock}
-              color="indigo"
-            />
-          </div>
+        {/* Risk Distribution */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+          <h3 className="text-slate-900 mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Risk Distribution
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={riskDistribution}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value }) => `${name}: ${value}`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {riskDistribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ActionButton
-            icon={Building2}
-            label="Add Vendor"
-            description="Create new vendor assessment"
-          />
-          <ActionButton
-            icon={Shield}
-            label="New VAPT Report"
-            description="Start vulnerability assessment"
-          />
-          <ActionButton
-            icon={FileCheck}
-            label="Compliance Check"
-            description="Review compliance controls"
-          />
+      {/* Trend Chart */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <h3 className="text-slate-900 mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-green-600" />
+          6-Month Trend Analysis
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="compliance" stroke="#06b6d4" strokeWidth={3} />
+            <Line type="monotone" dataKey="risk" stroke="#f97316" strokeWidth={3} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Recent Activities */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <h3 className="text-slate-900 mb-4">Recent Activities</h3>
+        <div className="space-y-3">
+          {[
+            { text: 'ISO 27001 audit completed - 12 controls updated', type: 'success', time: '2 hours ago' },
+            { text: 'New vendor risk assessment initiated for TechCorp', type: 'info', time: '4 hours ago' },
+            { text: 'VAPT report generated for Q2 2025', type: 'info', time: '1 day ago' },
+            { text: 'Critical finding in production environment', type: 'warning', time: '2 days ago' },
+            { text: 'DSAR request closed - Data deletion confirmed', type: 'success', time: '3 days ago' },
+          ].map((activity, index) => (
+            <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div
+                className={`w-2 h-2 rounded-full mt-2 ${
+                  activity.type === 'success'
+                    ? 'bg-green-500'
+                    : activity.type === 'warning'
+                    ? 'bg-orange-500'
+                    : 'bg-blue-500'
+                }`}
+              />
+              <div className="flex-1">
+                <p className="text-slate-800 text-sm">{activity.text}</p>
+                <p className="text-slate-500 text-xs mt-1">{activity.time}</p>
+              </div>
+              <CheckCircle className="w-4 h-4 text-slate-400" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
-  );
-}
-
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  icon: any;
-  color: 'blue' | 'green' | 'purple' | 'indigo';
-  subtitle: string;
-}
-
-function MetricCard({ title, value, icon: Icon, color, subtitle }: MetricCardProps) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    indigo: 'bg-indigo-50 text-indigo-600',
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-      </div>
-      <p className="text-gray-600 text-sm mb-1">{title}</p>
-      <p className="text-gray-900 mb-1">{value}</p>
-      <p className="text-gray-500 text-xs">{subtitle}</p>
-    </div>
-  );
-}
-
-interface StatRowProps {
-  label: string;
-  value: number;
-  icon: any;
-  color: 'green' | 'yellow' | 'red' | 'orange' | 'indigo';
-}
-
-function StatRow({ label, value, icon: Icon, color }: StatRowProps) {
-  const colorClasses = {
-    green: 'text-green-600',
-    yellow: 'text-yellow-600',
-    red: 'text-red-600',
-    orange: 'text-orange-600',
-    indigo: 'text-indigo-600',
-  };
-
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-      <div className="flex items-center gap-2">
-        <Icon className={`w-4 h-4 ${colorClasses[color]}`} />
-        <span className="text-gray-700 text-sm">{label}</span>
-      </div>
-      <span className="text-gray-900">{value}</span>
-    </div>
-  );
-}
-
-interface ActionButtonProps {
-  icon: any;
-  label: string;
-  description: string;
-}
-
-function ActionButton({ icon: Icon, label, description }: ActionButtonProps) {
-  return (
-    <button className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left">
-      <Icon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-      <div>
-        <p className="text-gray-900 text-sm mb-1">{label}</p>
-        <p className="text-gray-500 text-xs">{description}</p>
-      </div>
-    </button>
   );
 }

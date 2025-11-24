@@ -1,329 +1,445 @@
-# GRC Suite - Offline-Capable Governance, Risk & Compliance Platform
+# 🛡️ GRC Suite - Portable Edition
 
-## 🚀 Overview
+A comprehensive, offline-capable Governance, Risk, and Compliance (GRC) platform designed for Linux systems. Manage compliance, vendor risk, VAPT reporting, privacy, and more—all without requiring internet connectivity.
 
-A comprehensive, browser-based GRC platform that runs 100% offline with no server required. Built with React, TypeScript, and IndexedDB for complete data privacy and portability.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-Proprietary-red.svg)
+![Platform](https://img.shields.io/badge/platform-Linux-green.svg)
 
 ## ✨ Features
 
 ### Core Modules
+- **📊 GRC Dashboard** - Real-time compliance and risk metrics
+- **👥 Vendor Risk Assessment** - Third-party security evaluation
+- **🛡️ Compliance Manager** - ISO 27001/17/18, RBI, DL SAR frameworks
+- **🐛 VAPT Reporting** - Professional vulnerability reports
+- **🔒 Privacy & GDPR** - ROPA, DPIA, DSAR, Consent management
 
-1. **Dashboard**
-   - Real-time metrics and KPIs
-   - Compliance rate visualization
-   - Risk assessment overview
-   - Quick actions and insights
+### Key Capabilities
+- ✅ **100% Offline Operation** - No internet required
+- ✅ **No-Code Control Panel** - Modify everything without coding
+- ✅ **Bulk Operations** - Import/export thousands of records
+- ✅ **AI Integration** - Optional AI assistance (OpenAI, Anthropic, Local LLM)
+- ✅ **Professional Reports** - Branded PDF exports
+- ✅ **RBAC** - Role-based access control
+- ✅ **Multi-Company** - Support for multiple organizations
+- ✅ **Portable** - Single binary or Docker deployment
 
-2. **User Management**
-   - Role-based access control (RBAC)
-   - Four user roles: Admin, Auditor, Analyst, Viewer
-   - Granular permissions per module (Read/Write/Execute)
-   - User activity tracking
+## 🚀 Quick Start
 
-3. **Vendor Risk Assessment**
-   - Custom security questionnaires
-   - Automated risk scoring
-   - Vendor status tracking (Pending/In Review/Approved/Rejected)
-   - Public submission links
-   - CSV/Excel export
+### Option 1: Run the Binary
 
-4. **Compliance Management**
-   - Pre-loaded frameworks:
-     - ISO 27001:2022
-     - ISO 27017:2015
-     - ISO 27018:2019
-     - RBI IT Outsourcing
-     - DPDP Act - SAR & IT RA
-   - Bulk load/delete controls
-   - Status tracking (Compliant/Partial/Non-Compliant/Not Applicable)
-   - Evidence and notes management
-   - AI-powered compliance summaries
-   - PDF and Excel export
+```bash
+# Extract the package
+unzip grc-suite.zip
+cd grc-suite
 
-5. **VAPT (Vulnerability Assessment & Penetration Testing) Reporting**
-   - Professional vulnerability reports
-   - Severity classification (Critical/High/Medium/Low/Info)
-   - CVSS scoring
-   - Detailed findings with evidence
-   - AI-generated remediation steps
-   - Executive summary generation
-   - PDF export with branding
+# Make executable and run
+chmod +x grc-suite
+./grc-suite
 
-6. **Privacy Management**
-   - **ROPA** (Records of Processing Activities)
-   - **PII Inventory** (Personal Information tracking)
-   - **DPIA** (Data Protection Impact Assessments)
-   - **Consent Management** (Consent tracking)
-   - **DSAR** (Data Subject Access Requests)
-   - Multi-company support
-
-7. **AI Integration**
-   - OpenAI (GPT-4) support
-   - Anthropic (Claude) support
-   - Local AI support (Ollama/LM Studio)
-   - Features:
-     - Generate compliance summaries
-     - Write remediation steps
-     - Create VAPT executive summaries
-     - Enhance risk descriptions
-
-8. **Brand Customization**
-   - Upload client and auditor logos
-   - Custom primary and secondary colors
-   - Company name configuration
-   - Branded PDF exports
-
-## 🔧 Technical Architecture
-
-### Technology Stack
-- **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS v4.0
-- **Storage**: IndexedDB (Browser Local Storage)
-- **Offline**: Service Workers (Progressive Web App capable)
-- **Export**: PDF (via browser print), CSV/Excel
-
-### Data Storage
-- All data stored in browser's IndexedDB
-- No server required
-- Completely offline-capable
-- Data persists across sessions
-- Multi-company support
-
-## 🏃 Getting Started
-
-### Default Login Credentials
-```
-Username: admin
-Password: admin123
+# Access in browser
+open http://localhost:8080
 ```
 
-### First Time Setup
+**Default credentials:** `admin` / `admin` (⚠️ Change immediately!)
 
-1. **Login** with default credentials
-2. **Configure Settings**:
-   - Navigate to Settings
-   - Add your company name
-   - Upload logos (optional)
-   - Configure AI provider (optional)
-   - Set brand colors (optional)
+### Option 2: Docker
 
-3. **Create Users**:
-   - Go to User Management
-   - Add team members with appropriate roles
-   - Configure permissions per user
+```bash
+# Using Docker Compose (Recommended)
+docker-compose up -d
 
-4. **Load Compliance Frameworks**:
-   - Navigate to Compliance
-   - Click "Load Framework"
-   - Select desired framework(s)
-   - Start updating control status
+# Or using Docker directly
+docker build -t grc-suite:latest .
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data grc-suite:latest
 
-5. **Start Assessments**:
-   - Create vendor assessments
-   - Generate VAPT reports
-   - Track privacy records
-
-## 📖 User Guide
-
-### User Roles & Permissions
-
-| Role | Description | Default Permissions |
-|------|-------------|---------------------|
-| **Admin** | Full system access | All modules: Read/Write/Execute |
-| **Auditor** | Compliance and assessment focus | All modules: Read/Write |
-| **Analyst** | Data analysis and reporting | All modules: Read, Limited Write |
-| **Viewer** | Read-only access | All modules: Read only |
-
-### Vendor Risk Assessment Workflow
-
-1. **Create Assessment**: Click "New Assessment"
-2. **Fill Questionnaire**: Complete security questions
-3. **Submit**: System auto-calculates risk score
-4. **Review**: Change status based on assessment
-5. **Export**: Generate report for stakeholders
-
-### Compliance Management Workflow
-
-1. **Load Framework**: Select ISO 27001, ISO 27017, etc.
-2. **Update Status**: Mark controls as Compliant/Partial/Non-Compliant
-3. **Add Evidence**: Document proof of compliance
-4. **Generate Report**: Export PDF with compliance status
-5. **AI Summary**: Generate executive summary
-
-### VAPT Reporting Workflow
-
-1. **Create Report**: New VAPT Report
-2. **Add Findings**: Document vulnerabilities
-3. **Set Severity**: Classify each finding
-4. **Add Evidence**: Include proof of concept
-5. **Generate Remediation**: Use AI or manual entry
-6. **Export PDF**: Professional branded report
-
-### Privacy Management Workflow
-
-1. **Select Module**: ROPA, PII, DPIA, Consent, or DSAR
-2. **Add Record**: Fill required fields
-3. **Track Status**: Monitor compliance
-4. **Export Data**: Generate reports as needed
-
-## 🤖 AI Integration Setup
-
-### OpenAI Configuration
-1. Go to Settings → AI Integration
-2. Select "OpenAI (GPT-4)"
-3. Enter API key from [platform.openai.com](https://platform.openai.com)
-4. Save settings
-5. Use AI features in Compliance and VAPT modules
-
-### Anthropic Configuration
-1. Go to Settings → AI Integration
-2. Select "Anthropic (Claude)"
-3. Enter API key from [console.anthropic.com](https://console.anthropic.com)
-4. Save settings
-
-### Local AI Configuration
-1. Install [Ollama](https://ollama.ai) or [LM Studio](https://lmstudio.ai)
-2. Run a local model
-3. Select "Local AI" in Settings
-4. Configure endpoint if needed
-
-## 📤 Export & Reporting
-
-### PDF Export
-- **VAPT Reports**: Full professional reports with branding
-- **Compliance Reports**: Framework assessment with statistics
-- **Custom Branding**: Includes uploaded logos and colors
-
-### CSV/Excel Export
-- **Vendor List**: All vendor assessments
-- **Compliance Controls**: Detailed control status
-- **Any Data Table**: Export for external analysis
-
-## 🔒 Security & Privacy
-
-### Data Privacy
-- **100% Local Storage**: No data sent to external servers
-- **Offline First**: Works without internet
-- **Browser Isolation**: Data stays in your browser
-- **No Tracking**: Zero analytics or telemetry
-
-### Backup & Migration
-To backup your data:
-1. Use browser's export functionality
-2. Save IndexedDB data via DevTools
-3. Export individual modules to CSV
-
-### Multi-Device
-- Data is device-specific
-- Not synced across devices (by design)
-- Export/import for data transfer
-
-## 🚢 Deployment Options
-
-### Option 1: Static File Hosting
-1. Build the application: `npm run build`
-2. Deploy `dist/` folder to any web server
-3. Access via browser
-4. Works offline after first load
-
-### Option 2: Local File System
-1. Build the application
-2. Open `index.html` directly in browser
-3. May have CORS limitations
-
-### Option 3: Docker (Future Enhancement)
-```dockerfile
-FROM nginx:alpine
-COPY dist/ /usr/share/nginx/html/
-EXPOSE 80
+# Access in browser
+open http://localhost:8080
 ```
 
-### Option 4: Electron/Tauri (Future Enhancement)
-- Package as desktop application
-- Native file system access
-- Better offline experience
+## 📦 What's Included
 
-## 📋 Pre-loaded Templates
+```
+grc-suite/
+├── grc-suite              # Linux executable
+├── Dockerfile             # Docker configuration
+├── docker-compose.yml     # Docker Compose setup
+├── templates/             # Compliance frameworks
+│   ├── iso27001.json     # ISO 27001 controls (167)
+│   ├── iso27017.json     # ISO 27017 controls (112)
+│   ├── iso27018.json     # ISO 27018 controls (95)
+│   ├── rbi-it.json       # RBI IT Outsourcing (78)
+│   └── vapt-template.json # VAPT report template
+├── data/                  # Application data (auto-created)
+├── backups/               # Automatic backups
+├── logs/                  # Application logs
+├── config/                # Configuration files
+├── DEPLOYMENT.md          # Detailed deployment guide
+├── README.md              # This file
+└── SOP.pdf               # Complete user manual
+```
 
-### Compliance Frameworks
-- **ISO 27001:2022**: 10 key controls
-- **ISO 27017:2015**: 5 cloud security controls
-- **ISO 27018:2019**: 5 privacy controls
-- **RBI IT Outsourcing**: 7 outsourcing controls
-- **DPDP Act SAR**: 5 subject access controls
-- **DPDP Act IT RA**: 5 risk assessment controls
+## 🎯 Use Cases
 
-### Vendor Questionnaire
-- Company Information (3 questions)
-- Information Security (4 questions)
-- Data Privacy (3 questions)
-- Business Continuity (3 questions)
+### Compliance Teams
+- Track ISO 27001/27017/27018 implementation
+- Manage RBI IT Outsourcing compliance
+- Generate audit-ready reports
+- Bulk import controls from Excel
 
-## 🛠️ Troubleshooting
+### Security Teams
+- Create professional VAPT reports
+- Track vulnerability remediation
+- Risk scoring and analysis
+- Evidence management
 
-### Data Not Persisting
-- Check browser storage settings
-- Ensure IndexedDB is enabled
-- Clear cache if corrupted
+### Privacy Officers
+- Maintain ROPA (Records of Processing Activities)
+- Conduct DPIAs (Data Privacy Impact Assessments)
+- Track DSAR (Data Subject Access Requests)
+- Manage consent records
 
-### AI Not Working
-- Verify API key is correct
-- Check internet connection (for cloud AI)
-- Ensure sufficient API credits
+### Vendor Management
+- Assess third-party security posture
+- Create custom questionnaires
+- Generate public submission forms
+- Track vendor risk over time
 
-### Export Issues
-- Enable pop-ups for PDF export
-- Check browser print settings
-- Try different browser if issues persist
+## 🎨 Control Panel Features
 
-## 📞 Support & Contribution
+**No coding required!** The built-in Control Panel allows you to:
 
-### Known Limitations
-- No multi-device sync (by design)
-- Browser storage limits (~50MB typical)
-- PDF export requires modern browser
-- AI requires internet (except local AI)
+- ✅ Enable/disable features with toggle switches
+- ✅ Add custom features and modules
+- ✅ Import/export templates (JSON, Excel)
+- ✅ Configure AI integration
+- ✅ Customize branding and theming
+- ✅ Manage database and backups
+- ✅ Configure security settings
 
-### Future Enhancements
-- Real backend integration option
-- Advanced reporting templates
-- Workflow automation
-- Email notifications
-- Document management
-- Risk register
-- Incident management
+Access: **Control Panel** in the main navigation menu
+
+## 📤 Bulk Upload
+
+Import hundreds or thousands of records at once:
+
+1. Navigate to **Bulk Upload** module
+2. Select upload type (Controls, Vendors, Findings, Users, etc.)
+3. Download the Excel/CSV template
+4. Fill in your data
+5. Upload and review results
+
+Supported formats: Excel (`.xlsx`, `.xls`), CSV (`.csv`), JSON (`.json`)
+
+## 🤖 AI Integration (Optional)
+
+Enable AI for automated report generation and insights:
+
+### Supported Providers
+- **OpenAI** (GPT-4, GPT-3.5 Turbo) - Requires internet
+- **Anthropic** (Claude 3 Opus, Sonnet) - Requires internet  
+- **Local LLM** (Ollama: llama2, mistral, etc.) - 100% offline
+
+### Setup
+1. Navigate to **Settings → Integrations**
+2. Select AI provider
+3. Enter API key (or configure local LLM endpoint)
+4. Choose model
+5. Save settings
+
+AI will assist with:
+- VAPT remediation recommendations
+- Compliance control guidance
+- Executive summary generation
+- Risk analysis
+
+## 🔐 Security
+
+- **Encrypted Storage** - All sensitive data encrypted at rest
+- **RBAC** - Granular role-based access control
+- **Audit Logs** - Complete activity logging
+- **Session Management** - Configurable timeouts
+- **2FA Support** - Two-factor authentication (optional)
+- **Password Policies** - Enforced strong passwords
+
+## 💾 Backup & Recovery
+
+### Automatic Backups
+- Daily backups at 2:00 AM (configurable)
+- Stored in `./backups/` directory
+- 30-day retention (configurable)
+
+### Manual Backup
+```bash
+# Create backup
+tar -czf backups/manual-$(date +%Y%m%d).tar.gz data/
+
+# Restore from backup
+tar -xzf backups/grc-backup-20251121.tar.gz
+```
+
+## 📊 System Requirements
+
+### Minimum
+- **OS:** Linux (Ubuntu 20.04+, Debian 10+, RHEL 8+)
+- **RAM:** 2 GB
+- **Disk:** 500 MB
+- **CPU:** 1 core
+
+### Recommended
+- **OS:** Linux (Latest LTS)
+- **RAM:** 4 GB
+- **Disk:** 2 GB (SSD preferred)
+- **CPU:** 2+ cores
+
+## 🌐 Network Options
+
+### Localhost Only (Most Secure)
+```bash
+./grc-suite --host 127.0.0.1
+```
+
+### LAN Access
+```bash
+./grc-suite --host 0.0.0.0
+# Access from network: http://your-ip:8080
+```
+
+### With SSL (via Nginx)
+See `DEPLOYMENT.md` for SSL configuration guide
+
+## 📖 Documentation
+
+- **In-App SOP:** Navigate to **User Guide (SOP)** in the menu
+- **Deployment Guide:** See `DEPLOYMENT.md`
+- **Complete Manual:** See `SOP.pdf`
+- **API Documentation:** http://localhost:8080/api/docs
+
+## 🔄 Updates
+
+### Update Binary
+```bash
+# Backup data
+tar -czf backups/pre-update.tar.gz data/
+
+# Replace binary
+chmod +x grc-suite-new
+mv grc-suite grc-suite-old
+mv grc-suite-new grc-suite
+
+# Restart
+./grc-suite
+```
+
+### Update Docker
+```bash
+docker-compose pull
+docker-compose up -d
+```
+
+## 🐛 Troubleshooting
+
+### Port Already in Use
+```bash
+# Check what's using port 8080
+sudo lsof -i :8080
+
+# Run on different port
+./grc-suite --port 9000
+```
+
+### Application Won't Start
+```bash
+# Check logs
+tail -f logs/app.log
+
+# Check permissions
+chmod +x grc-suite
+
+# Check disk space
+df -h
+```
+
+### Bulk Upload Fails
+- ✅ Use the downloaded template
+- ✅ Remove empty rows at end of Excel file
+- ✅ Verify date format (YYYY-MM-DD)
+- ✅ Check all required fields are filled
+- ✅ Ensure file size < 10MB
+
+See `DEPLOYMENT.md` for complete troubleshooting guide.
+
+## 🛠️ Configuration
+
+### Environment Variables
+Create `.env` file:
+```env
+PORT=8080
+DB_PATH=./data/grc.db
+BACKUP_ENABLED=true
+AI_PROVIDER=none
+LOG_LEVEL=info
+```
+
+### Configuration File
+Edit `config/default.json`:
+```json
+{
+  "app": {
+    "port": 8080
+  },
+  "database": {
+    "type": "sqlite",
+    "path": "./data/grc.db"
+  },
+  "features": {
+    "bulkUpload": true,
+    "aiAssistance": false,
+    "multiCompany": false
+  }
+}
+```
+
+## 📝 Available Templates
+
+Pre-loaded compliance frameworks:
+
+| Framework | Controls | Description |
+|-----------|----------|-------------|
+| **ISO 27001** | 167 | Information Security Management |
+| **ISO 27017** | 112 | Cloud Security |
+| **ISO 27018** | 95 | Cloud Privacy |
+| **RBI IT Outsourcing** | 78 | Reserve Bank of India Guidelines |
+| **DL SAR & IT RA** | 45 | Digital Lending Security Assessment |
+
+All templates support:
+- ✅ Bulk import/export
+- ✅ Custom fields
+- ✅ Evidence attachments
+- ✅ PDF/Excel reports
+
+## 🔧 Maintenance
+
+### Daily
+```bash
+# Check application status
+curl http://localhost:8080/health
+```
+
+### Weekly
+```bash
+# Check disk space
+df -h
+
+# Review logs
+tail -n 100 logs/app.log | grep ERROR
+```
+
+### Monthly
+```bash
+# Test backup restoration
+# Clean old logs
+find logs/ -mtime +30 -delete
+
+# Optimize database
+sqlite3 data/grc.db "VACUUM; ANALYZE;"
+```
+
+## 🎓 Training Resources
+
+### Getting Started (15 mins)
+1. Watch in-app tutorial
+2. Import sample data
+3. Create your first control
+4. Generate a report
+
+### Control Panel Training (30 mins)
+1. Feature management
+2. Template import
+3. Bulk upload workflow
+4. Settings configuration
+
+### Complete Course (2 hours)
+- All modules walkthrough
+- Best practices
+- Advanced configurations
+- Integration setup
+
+Access training: **User Guide (SOP)** → Video Tutorials
+
+## 📞 Support
+
+### Self-Help
+1. Check **User Guide (SOP)** in the app
+2. Review `DEPLOYMENT.md`
+3. Search logs: `grep ERROR logs/app.log`
+
+### Log Collection
+```bash
+# Create support package
+tar -czf support-$(date +%Y%m%d).tar.gz \
+  logs/ \
+  config/ \
+  docker-compose.yml
+```
+
+## 🚦 Status Indicators
+
+| Indicator | Meaning |
+|-----------|---------|
+| 🟢 Online | Application running normally |
+| 🟡 Warning | Minor issues detected |
+| 🔴 Offline | Application stopped |
+| 🔵 Maintenance | Maintenance mode active |
+
+## 📊 Performance Tips
+
+- ✅ Use SSD for data directory
+- ✅ Regularly vacuum database (monthly)
+- ✅ Enable automatic backups
+- ✅ Monitor disk space (keep 20% free)
+- ✅ Clean old logs (keep 30 days)
+- ✅ Use bulk upload for >50 records
+- ✅ Enable compression for backups
+
+## 🗺️ Roadmap
+
+### Version 1.1 (Planned)
+- [ ] Mobile-responsive design
+- [ ] Additional compliance frameworks (SOC 2, NIST)
+- [ ] Advanced reporting engine
+- [ ] API integrations
+
+### Version 1.2 (Planned)
+- [ ] Workflow automation
+- [ ] Custom dashboards
+- [ ] Advanced analytics
+- [ ] Multi-language support
 
 ## 📄 License
 
-This is a demonstration GRC platform. Customize and extend as needed for your organization.
+Proprietary. See LICENSE file for details.
 
-## 🎯 Best Practices
+## 🙏 Credits
 
-1. **Regular Exports**: Export data regularly as backup
-2. **User Training**: Train team on RBAC and workflows
-3. **Framework Updates**: Keep compliance templates current
-4. **AI Usage**: Review AI-generated content before use
-5. **Brand Consistency**: Set logos and colors early
-6. **Access Control**: Use principle of least privilege
+Built with:
+- React + TypeScript
+- Tailwind CSS
+- Recharts
+- SQLite
+- Node.js
 
-## 🔄 Updates & Maintenance
+## 📞 Contact
 
-### Version History
-- **v1.0.0**: Initial release with core modules
-
-### Updating Templates
-To add new compliance frameworks:
-1. Edit `/lib/templates.ts`
-2. Add framework controls
-3. Reload application
-
-### Customization
-All components are in `/components/`
-Styling in `/styles/globals.css`
-Database schema in `/lib/db.ts`
+For enterprise support and customization:
+- Email: support@grcsuite.com
+- Documentation: https://docs.grcsuite.com
 
 ---
 
-**Built with ❤️ for GRC professionals**
+**Version:** 1.0.0  
+**Release Date:** November 21, 2025  
+**Build:** Production
 
-*Offline-first • Privacy-focused • Zero dependencies*
+🛡️ **Keep Your Organization Secure and Compliant**

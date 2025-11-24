@@ -1,267 +1,339 @@
-import { useState, useEffect } from 'react';
-import { db, Settings as SettingsType } from '../lib/db';
-import { Settings as SettingsIcon, Upload, Save, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Upload, Save, Palette, Globe, Database, Key } from 'lucide-react';
 
 export function Settings() {
-  const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    const allSettings = await db.getAll<SettingsType>('settings');
-    if (allSettings.length > 0) {
-      setSettings(allSettings[0]);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!settings) return;
-
-    setSaving(true);
-    await db.put('settings', settings);
-    setSaving(false);
-    alert('Settings saved successfully!');
-  };
-
-  const handleLogoUpload = (type: 'client' | 'auditor') => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const dataUrl = event.target?.result as string;
-          if (type === 'client') {
-            setSettings({ ...settings!, clientLogo: dataUrl });
-          } else {
-            setSettings({ ...settings!, auditorLogo: dataUrl });
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
-
-  if (!settings) {
-    return <div>Loading...</div>;
-  }
+  const [activeTab, setActiveTab] = useState('branding');
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Configure branding, AI integration, and system preferences</p>
+      <div className="bg-gradient-to-r from-slate-700 to-slate-900 rounded-2xl shadow-xl p-8 text-white">
+        <h2 className="text-3xl mb-2">Settings & Configuration</h2>
+        <p className="text-slate-300">
+          Customize branding, integrations, and system preferences
+        </p>
       </div>
 
-      {/* Brand Customization */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-gray-900 mb-4">Brand Customization</h2>
-        <div className="space-y-6">
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="flex border-b border-slate-200">
+          {[
+            { id: 'branding', name: 'Branding', icon: Palette },
+            { id: 'integrations', name: 'Integrations', icon: Globe },
+            { id: 'database', name: 'Database', icon: Database },
+            { id: 'security', name: 'Security', icon: Key },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-slate-50 text-slate-900 border-b-2 border-slate-900'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'branding' && <BrandingSettings />}
+          {activeTab === 'integrations' && <IntegrationSettings />}
+          {activeTab === 'database' && <DatabaseSettings />}
+          {activeTab === 'security' && <SecuritySettings />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrandingSettings() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-slate-900 mb-4">Company Branding</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm text-gray-700 mb-2">Company Name</label>
+            <label className="block text-slate-700 text-sm mb-2">Company Logo</label>
+            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-slate-400 transition-colors">
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-600 text-sm mb-2">Upload Company Logo</p>
+              <p className="text-slate-400 text-xs">PNG, JPG, SVG (Max 2MB)</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Auditor Logo</label>
+            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-slate-400 transition-colors">
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-600 text-sm mb-2">Upload Auditor Logo</p>
+              <p className="text-slate-400 text-xs">PNG, JPG, SVG (Max 2MB)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-slate-700 text-sm mb-2">Company Name</label>
+        <input
+          type="text"
+          placeholder="Your Company Name"
+          className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        />
+      </div>
+
+      <div>
+        <h4 className="text-slate-900 mb-3">Theme Customization</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Primary Color</label>
             <input
-              type="text"
-              value={settings.companyName || ''}
-              onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="color"
+              defaultValue="#0891b2"
+              className="w-full h-12 rounded-lg border border-slate-300 cursor-pointer"
             />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Client Logo */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-2">Client Logo</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                {settings.clientLogo ? (
-                  <div className="space-y-3">
-                    <img
-                      src={settings.clientLogo}
-                      alt="Client Logo"
-                      className="max-h-32 mx-auto"
-                    />
-                    <button
-                      onClick={() => handleLogoUpload('client')}
-                      className="text-sm text-blue-600 hover:text-blue-700"
-                    >
-                      Change Logo
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleLogoUpload('client')}
-                    className="flex flex-col items-center gap-2 w-full"
-                  >
-                    <Upload className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">Upload Client Logo</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Auditor Logo */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-2">Auditor Logo</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                {settings.auditorLogo ? (
-                  <div className="space-y-3">
-                    <img
-                      src={settings.auditorLogo}
-                      alt="Auditor Logo"
-                      className="max-h-32 mx-auto"
-                    />
-                    <button
-                      onClick={() => handleLogoUpload('auditor')}
-                      className="text-sm text-blue-600 hover:text-blue-700"
-                    >
-                      Change Logo
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleLogoUpload('auditor')}
-                    className="flex flex-col items-center gap-2 w-full"
-                  >
-                    <Upload className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">Upload Auditor Logo</span>
-                  </button>
-                )}
-              </div>
-            </div>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Secondary Color</label>
+            <input
+              type="color"
+              defaultValue="#3b82f6"
+              className="w-full h-12 rounded-lg border border-slate-300 cursor-pointer"
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm text-gray-700 mb-2">Primary Color</label>
-              <div className="flex gap-3">
-                <input
-                  type="color"
-                  value={settings.primaryColor || '#3b82f6'}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                  className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={settings.primaryColor || '#3b82f6'}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-700 mb-2">Secondary Color</label>
-              <div className="flex gap-3">
-                <input
-                  type="color"
-                  value={settings.secondaryColor || '#8b5cf6'}
-                  onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
-                  className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={settings.secondaryColor || '#8b5cf6'}
-                  onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Accent Color</label>
+            <input
+              type="color"
+              defaultValue="#8b5cf6"
+              className="w-full h-12 rounded-lg border border-slate-300 cursor-pointer"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Background</label>
+            <input
+              type="color"
+              defaultValue="#f8fafc"
+              className="w-full h-12 rounded-lg border border-slate-300 cursor-pointer"
+            />
           </div>
         </div>
       </div>
 
-      {/* AI Integration */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h2 className="text-gray-900">AI Integration</h2>
-        </div>
-        <p className="text-sm text-gray-600 mb-6">
-          Configure AI providers for generating summaries, remediation steps, and compliance documentation.
-        </p>
+      <button className="w-full px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+        <Save className="w-5 h-5" />
+        Save Branding Settings
+      </button>
+    </div>
+  );
+}
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm text-gray-700 mb-2">AI Provider</label>
-            <select
-              value={settings.aiProvider || ''}
-              onChange={(e) => setSettings({ ...settings, aiProvider: e.target.value as any })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Provider...</option>
-              <option value="openai">OpenAI (GPT-4)</option>
-              <option value="anthropic">Anthropic (Claude)</option>
-              <option value="local">Local AI (Ollama/LM Studio)</option>
-            </select>
-          </div>
-
-          {settings.aiProvider && settings.aiProvider !== 'local' && (
+function IntegrationSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="p-5 border border-slate-200 rounded-xl">
+          <h4 className="text-slate-900 mb-3">AI Integration</h4>
+          <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-700 mb-2">API Key</label>
+              <label className="block text-slate-700 text-sm mb-2">AI Provider</label>
+              <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option>OpenAI</option>
+                <option>Anthropic (Claude)</option>
+                <option>Local LLM (Ollama)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-700 text-sm mb-2">API Key</label>
               <input
                 type="password"
-                value={settings.aiApiKey || ''}
-                onChange={(e) => setSettings({ ...settings, aiApiKey: e.target.value })}
-                placeholder="Enter your API key..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="sk-..."
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                {settings.aiProvider === 'openai' && 'Get your API key from platform.openai.com'}
-                {settings.aiProvider === 'anthropic' && 'Get your API key from console.anthropic.com'}
-              </p>
             </div>
-          )}
+            <div>
+              <label className="block text-slate-700 text-sm mb-2">Model</label>
+              <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option>gpt-4</option>
+                <option>gpt-3.5-turbo</option>
+                <option>claude-3-opus</option>
+                <option>claude-3-sonnet</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-          {settings.aiProvider === 'local' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900">
-                <strong>Local AI Setup:</strong><br />
-                Install Ollama or LM Studio and run a model locally. Configure the endpoint URL in your environment if needed.
-              </p>
+        <div className="p-5 border border-slate-200 rounded-xl">
+          <h4 className="text-slate-900 mb-3">Email Notifications</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-slate-700 text-sm mb-2">SMTP Server</label>
+              <input
+                type="text"
+                placeholder="smtp.example.com"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              />
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 text-sm mb-2">Port</label>
+                <input
+                  type="text"
+                  placeholder="587"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 text-sm mb-2">Username</label>
+                <input
+                  type="text"
+                  placeholder="notifications@example.com"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* System Information */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-gray-900 mb-4">System Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Storage Type</p>
-            <p className="text-gray-900">IndexedDB (Browser Local Storage)</p>
+      <button className="w-full px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+        <Save className="w-5 h-5" />
+        Save Integration Settings
+      </button>
+    </div>
+  );
+}
+
+function DatabaseSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p className="text-orange-800 text-sm">
+          ⚠️ Changing database settings requires application restart
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-slate-700 text-sm mb-2">Database Type</label>
+        <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500">
+          <option>SQLite (Local File)</option>
+          <option>PostgreSQL</option>
+          <option>Supabase</option>
+          <option>MySQL</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-slate-700 text-sm mb-2">Data Directory</label>
+        <input
+          type="text"
+          defaultValue="./data/grc"
+          className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        />
+      </div>
+
+      <div className="p-5 border border-slate-200 rounded-xl">
+        <h4 className="text-slate-900 mb-3">Backup Settings</h4>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Enable automatic backups</span>
+          </label>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Backup Frequency</label>
+            <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500">
+              <option>Daily</option>
+              <option>Weekly</option>
+              <option>Monthly</option>
+            </select>
           </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Offline Support</p>
-            <p className="text-gray-900">✓ Fully Offline Capable</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Data Location</p>
-            <p className="text-gray-900">Browser Local Storage</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Version</p>
-            <p className="text-gray-900">1.0.0</p>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Backup Location</label>
+            <input
+              type="text"
+              defaultValue="./backups"
+              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            />
           </div>
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
+      <button className="w-full px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+        <Save className="w-5 h-5" />
+        Save Database Settings
+      </button>
+    </div>
+  );
+}
+
+function SecuritySettings() {
+  return (
+    <div className="space-y-6">
+      <div className="p-5 border border-slate-200 rounded-xl">
+        <h4 className="text-slate-900 mb-3">Authentication</h4>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Require strong passwords</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Enable two-factor authentication</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Force password change every 90 days</span>
+          </label>
+        </div>
       </div>
+
+      <div className="p-5 border border-slate-200 rounded-xl">
+        <h4 className="text-slate-900 mb-3">Session Management</h4>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Session Timeout (minutes)</label>
+            <input
+              type="number"
+              defaultValue="30"
+              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            />
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Automatic logout on browser close</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="p-5 border border-slate-200 rounded-xl">
+        <h4 className="text-slate-900 mb-3">Audit Logging</h4>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Log all user actions</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" defaultChecked className="w-4 h-4 text-slate-600 rounded" />
+            <span className="text-slate-700">Log data access and modifications</span>
+          </label>
+          <div>
+            <label className="block text-slate-700 text-sm mb-2">Log Retention (days)</label>
+            <input
+              type="number"
+              defaultValue="365"
+              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button className="w-full px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+        <Save className="w-5 h-5" />
+        Save Security Settings
+      </button>
     </div>
   );
 }

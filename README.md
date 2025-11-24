@@ -1,7 +1,7 @@
 
-  # GRC Compliance Management Platform
+  # Portable GRC Dashboard Development
 
-  This is a code bundle for GRC Compliance Management Platform. The original project is available at https://www.figma.com/design/eDSUNLh6cpSBEtni4F4X5x/GRC-Compliance-Management-Platform.
+  This is a code bundle for Portable GRC Dashboard Development. The original project is available at https://www.figma.com/design/ssBu2M59LtnhFQB9N6aEJW/Portable-GRC-Dashboard-Development.
 
   ## Running the code
 
