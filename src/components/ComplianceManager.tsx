@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { Shield, Download, Upload, FileText, CheckCircle, XCircle, Paperclip } from 'lucide-react';
+import { Shield, Download, Upload, FileText, CheckCircle, XCircle, Paperclip, AlertTriangle } from 'lucide-react';
 import { EvidenceUpload } from './EvidenceUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 export function ComplianceManager() {
   const [selectedFramework, setSelectedFramework] = useState('iso27001');
   const [selectedControl, setSelectedControl] = useState<string | null>(null);
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
+  const [editControlOpen, setEditControlOpen] = useState(false);
+  const [editingControl, setEditingControl] = useState<any>(null);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   const frameworks = [
     { id: 'iso27001', name: 'ISO 27001', total: 167, completed: 145 },
@@ -121,18 +125,54 @@ export function ComplianceManager() {
       {/* Actions */}
       <div className="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
         <div className="flex flex-wrap items-center gap-3">
-          <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
+          <button 
+            onClick={() => {
+              const doc = document.createElement('a');
+              doc.href = '#';
+              alert('PDF export functionality - Report will be generated for ' + currentFramework?.name);
+            }}
+            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+          >
             <Download className="w-5 h-5" />
             Export Report (PDF)
           </button>
-          <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+          <button 
+            onClick={() => alert('Excel export functionality - Exporting ' + currentFramework?.name + ' controls')}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
             <Download className="w-5 h-5" />
             Export to Excel
           </button>
-          <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-            <Upload className="w-5 h-5" />
-            Bulk Update Controls
-          </button>
+          <Dialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen}>
+            <DialogTrigger asChild>
+              <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                Bulk Update Controls
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Bulk Update Controls</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <p className="text-slate-600">Upload an Excel or CSV file to update multiple controls at once.</p>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+                  <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-2">Drag and drop your file here, or click to browse</p>
+                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" />
+                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    Choose File
+                  </button>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800 mb-2">Download Template:</p>
+                  <button className="text-blue-600 hover:text-blue-700 text-sm underline">
+                    control_bulk_update_template.xlsx
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -183,7 +223,13 @@ export function ComplianceManager() {
                   </button>
                 </td>
                 <td className="px-6 py-4">
-                  <button className="text-blue-600 hover:text-blue-700 text-sm">
+                  <button 
+                    onClick={() => {
+                      setEditingControl(control);
+                      setEditControlOpen(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 text-sm"
+                  >
                     Edit
                   </button>
                 </td>
@@ -206,6 +252,83 @@ export function ComplianceManager() {
           <li>• Export filtered controls to PDF or Excel</li>
         </ul>
       </div>
+
+      {/* Edit Control Modal */}
+      <Dialog open={editControlOpen} onOpenChange={setEditControlOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Control - {editingControl?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm text-slate-700 mb-2">Control Name</label>
+              <input
+                type="text"
+                defaultValue={editingControl?.name}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Status</label>
+                <select 
+                  defaultValue={editingControl?.status}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option>Not Implemented</option>
+                  <option>Partial</option>
+                  <option>Implemented</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Risk Level</label>
+                <select 
+                  defaultValue={editingControl?.risk}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-700 mb-2">Control Owner</label>
+              <input
+                type="text"
+                defaultValue={editingControl?.owner}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-700 mb-2">Implementation Notes</label>
+              <textarea
+                rows={4}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Add implementation details, notes, or evidence description..."
+              />
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button 
+                onClick={() => {
+                  alert('Control updated successfully!');
+                  setEditControlOpen(false);
+                }}
+                className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save Changes
+              </button>
+              <button 
+                onClick={() => setEditControlOpen(false)}
+                className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Evidence Upload Modal */}
       {showEvidenceModal && (
@@ -241,13 +364,5 @@ export function ComplianceManager() {
         </div>
       )}
     </div>
-  );
-}
-
-function AlertTriangle({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
   );
 }

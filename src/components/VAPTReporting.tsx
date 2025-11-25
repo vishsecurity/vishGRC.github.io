@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Bug, Plus, Download, Image, FileText, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 export function VAPTReporting() {
   const [reports, setReports] = useState([

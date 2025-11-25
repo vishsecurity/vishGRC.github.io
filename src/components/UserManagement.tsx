@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Users, Plus, Shield, Edit2, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 export function UserManagement() {
   const [users, setUsers] = useState([
-    { id: 1, name: 'Admin User', email: 'admin@company.com', role: 'Administrator', permissions: 'Full Access', status: 'Active' },
-    { id: 2, name: 'John Auditor', email: 'john@company.com', role: 'Auditor', permissions: 'Read/Write', status: 'Active' },
-    { id: 3, name: 'Jane Viewer', email: 'jane@company.com', role: 'Viewer', permissions: 'Read Only', status: 'Active' },
+    { id: 1, name: 'Vishal Chaudhary', email: 'Vishal.chaudhary@acquisory.com', role: 'Administrator', permissions: 'Full Access', status: 'Active' },
+    { id: 2, name: 'Atish Kumar', email: 'Atish.kumar@acquisory.com', role: 'Auditor', permissions: 'Read/Write', status: 'Active' },
+    { id: 3, name: 'Fateh Yadav', email: 'Fateh.yadav@acquisory.com', role: 'Viewer', permissions: 'Read Only', status: 'Active' },
   ]);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [rbacSettingsOpen, setRbacSettingsOpen] = useState(false);
 
   const roles = [
     { name: 'Administrator', permissions: ['Read', 'Write', 'Execute', 'Delete', 'Manage Users'] },
@@ -26,10 +29,71 @@ export function UserManagement() {
 
       {/* Actions */}
       <div className="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <button className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Add New User
-        </button>
+        <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Add New User
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  placeholder="john.doe@company.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Role</label>
+                <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                  <option>Administrator</option>
+                  <option>Auditor</option>
+                  <option>Compliance Manager</option>
+                  <option>Viewer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Department</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  placeholder="e.g., IT Security"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="rounded border-slate-300" defaultChecked />
+                  <span className="text-sm text-slate-700">Send welcome email with login credentials</span>
+                </label>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                  Create User
+                </button>
+                <button 
+                  onClick={() => setAddUserOpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Users Table */}
@@ -109,9 +173,60 @@ export function UserManagement() {
         <p className="text-cyan-700 text-sm mb-4">
           Configure granular permissions per module and operation for each role. Users inherit permissions from their assigned role.
         </p>
-        <button className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
-          Configure RBAC Settings
-        </button>
+        <Dialog open={rbacSettingsOpen} onOpenChange={setRbacSettingsOpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+              Configure RBAC Settings
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Configure RBAC Permissions</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Select Role to Configure</label>
+                <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                  <option>Administrator</option>
+                  <option>Auditor</option>
+                  <option>Compliance Manager</option>
+                  <option>Viewer</option>
+                </select>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="text-slate-800 mb-4">Module Permissions</h4>
+                <div className="space-y-4">
+                  {['Vendor Risk', 'Compliance', 'VAPT Reporting', 'Privacy Management', 'Evidence Manager', 'User Management'].map((module, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 rounded-lg">
+                      <h5 className="text-slate-800 mb-3">{module}</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {['Read', 'Write', 'Execute', 'Delete'].map((perm, i) => (
+                          <label key={i} className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" className="rounded border-slate-300" />
+                            <span className="text-slate-700">{perm}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4 border-t">
+                <button className="flex-1 px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                  Save Permissions
+                </button>
+                <button 
+                  onClick={() => setRbacSettingsOpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

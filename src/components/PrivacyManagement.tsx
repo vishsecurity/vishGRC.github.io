@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Lock, FileText, Users, Shield, AlertCircle } from 'lucide-react';
+import { Lock, FileText, Users, Shield, AlertCircle, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 export function PrivacyManagement() {
   const [activeModule, setActiveModule] = useState('ropa');
@@ -55,6 +56,8 @@ export function PrivacyManagement() {
 }
 
 function ROPAModule() {
+  const [addActivityOpen, setAddActivityOpen] = useState(false);
+  
   const records = [
     { id: 1, activity: 'Customer Data Processing', purpose: 'Service Delivery', dataCategories: 'Name, Email, Phone', retention: '5 years' },
     { id: 2, activity: 'Employee Records Management', purpose: 'HR Administration', dataCategories: 'Personal Info, Employment', retention: '7 years' },
@@ -64,9 +67,77 @@ function ROPAModule() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-          + Add New Processing Activity
-        </button>
+        <Dialog open={addActivityOpen} onOpenChange={setAddActivityOpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Add New Processing Activity
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Processing Activity (ROPA)</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Processing Activity Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Customer Data Processing"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Purpose of Processing</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Describe the purpose..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-700 mb-2">Data Categories</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="e.g., Name, Email, Address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-700 mb-2">Retention Period</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="e.g., 5 years"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Legal Basis</label>
+                <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                  <option>Consent</option>
+                  <option>Contract</option>
+                  <option>Legal Obligation</option>
+                  <option>Legitimate Interest</option>
+                  <option>Vital Interest</option>
+                  <option>Public Task</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  Add Activity
+                </button>
+                <button 
+                  onClick={() => setAddActivityOpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
@@ -100,6 +171,8 @@ function ROPAModule() {
 }
 
 function PIIInventory() {
+  const [addPIIOpen, setAddPIIOpen] = useState(false);
+  
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
@@ -107,9 +180,65 @@ function PIIInventory() {
         <p className="text-slate-600 mb-4">
           Track and categorize all personally identifiable information across systems
         </p>
-        <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-          + Add PII Category
-        </button>
+        <Dialog open={addPIIOpen} onOpenChange={setAddPIIOpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Add PII Category
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add PII Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Category Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Customer PII"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Storage Location</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Database Server A"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Encryption Method</label>
+                <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                  <option>AES-256</option>
+                  <option>AES-128</option>
+                  <option>RSA</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Access Controls</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Role-based"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  Add Category
+                </button>
+                <button 
+                  onClick={() => setAddPIIOpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -130,6 +259,8 @@ function PIIInventory() {
 }
 
 function DPIAModule() {
+  const [newDPIAOpen, setNewDPIAOpen] = useState(false);
+  
   const assessments = [
     { id: 1, project: 'New CRM System', risk: 'Medium', status: 'In Progress', date: '2025-11-10' },
     { id: 2, project: 'Mobile App Launch', risk: 'High', status: 'Completed', date: '2025-10-15' },
@@ -139,9 +270,65 @@ function DPIAModule() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-          + Start New DPIA
-        </button>
+        <Dialog open={newDPIAOpen} onOpenChange={setNewDPIAOpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Start New DPIA
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Start New Data Privacy Impact Assessment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Project Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., New CRM System"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Description</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Describe the project and data processing..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-700 mb-2">Initial Risk Level</label>
+                  <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-700 mb-2">Assessment Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  Start Assessment
+                </button>
+                <button 
+                  onClick={() => setNewDPIAOpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4">
@@ -174,6 +361,8 @@ function DPIAModule() {
 }
 
 function DSARTracker() {
+  const [newDSAROpen, setNewDSAROpen] = useState(false);
+  
   const requests = [
     { id: 1, type: 'Access Request', subject: 'john.doe@example.com', status: 'In Progress', deadline: '2025-11-25' },
     { id: 2, type: 'Deletion Request', subject: 'jane.smith@example.com', status: 'Completed', deadline: '2025-11-20' },
@@ -183,9 +372,65 @@ function DSARTracker() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-          + New DSAR Request
-        </button>
+        <Dialog open={newDSAROpen} onOpenChange={setNewDSAROpen}>
+          <DialogTrigger asChild>
+            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              New DSAR Request
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Data Subject Access Request</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Request Type</label>
+                <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                  <option>Access Request</option>
+                  <option>Deletion Request</option>
+                  <option>Rectification Request</option>
+                  <option>Portability Request</option>
+                  <option>Objection to Processing</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Data Subject Email</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="subject@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Request Details</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Describe the request..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">Deadline (30 days from receipt)</label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  Create Request
+                </button>
+                <button 
+                  onClick={() => setNewDSAROpen(false)}
+                  className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
@@ -227,6 +472,9 @@ function DSARTracker() {
 }
 
 function ConsentManagement() {
+  const [manageConsentOpen, setManageConsentOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
@@ -253,11 +501,93 @@ function ConsentManagement() {
           {['Marketing Communications', 'Analytics & Cookies', 'Third-Party Sharing', 'Profiling'].map((category, index) => (
             <div key={index} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
               <span className="text-slate-800">{category}</span>
-              <button className="text-blue-600 hover:text-blue-700 text-sm">Manage</button>
+              <button 
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setManageConsentOpen(true);
+                }}
+                className="text-blue-600 hover:text-blue-700 text-sm"
+              >
+                Manage
+              </button>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Manage Consent Modal */}
+      <Dialog open={manageConsentOpen} onOpenChange={setManageConsentOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Consent - {selectedCategory}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                Configure consent settings, templates, and tracking for {selectedCategory}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-700 mb-2">Consent Template</label>
+              <textarea
+                rows={4}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                defaultValue={`We would like your consent to use your personal data for ${selectedCategory}.`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-700 mb-2">Consent Method</label>
+              <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option>Opt-In (Explicit)</option>
+                <option>Opt-Out</option>
+                <option>Soft Opt-In</option>
+              </select>
+            </div>
+            <div>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="rounded border-slate-300" defaultChecked />
+                <span className="text-sm text-slate-700">Require re-confirmation every 12 months</span>
+              </label>
+            </div>
+            <div>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="rounded border-slate-300" defaultChecked />
+                <span className="text-sm text-slate-700">Log all consent changes</span>
+              </label>
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="text-sm text-slate-700 mb-3">Active Consents</h4>
+              <div className="space-y-2">
+                <div className="p-3 bg-slate-50 rounded flex justify-between items-center">
+                  <span className="text-slate-700 text-sm">user@example.com</span>
+                  <span className="text-green-600 text-xs">Consented 2025-11-15</span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded flex justify-between items-center">
+                  <span className="text-slate-700 text-sm">another@example.com</span>
+                  <span className="text-green-600 text-xs">Consented 2025-11-10</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button 
+                onClick={() => {
+                  alert('Consent settings updated successfully!');
+                  setManageConsentOpen(false);
+                }}
+                className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Save Settings
+              </button>
+              <button 
+                onClick={() => setManageConsentOpen(false)}
+                className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
