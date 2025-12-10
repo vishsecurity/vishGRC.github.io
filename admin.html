@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GRC Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+    body { font-family: 'Roboto', sans-serif; background: #f5f5f5; }
+    .sidebar { height: 100vh; width: 220px; background: #1976d2; color: #fff; position: fixed; }
+    .sidebar a { color: #fff; display: block; padding: 12px; text-decoration: none; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    .content { margin-left: 230px; padding: 20px; }
+    table { background: #fff; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h3 class="text-center py-3">GRC Dashboard</h3>
+    <a href="#" onclick="showSection('questions')"><i class="bi bi-question-circle-fill"></i> Questions</a>
+    <a href="#" onclick="showSection('bulk')"><i class="bi bi-upload"></i> Bulk Upload</a>
+    <a href="#" onclick="showSection('logos')"><i class="bi bi-image-fill"></i> Upload Logos</a>
+</div>
+
+<div class="content">
+
+    <!-- Questions Section -->
+    <div id="questions" class="section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Questions</h2>
+            <div>
+                <select id="questionDomainFilter" class="form-select d-inline-block" style="width:200px;">
+                    <option value="">Filter by Domain</option>
+                    <option value="General Overview">General Overview</option>
+                    <option value="Asset Management">Asset Management</option>
+                    <option value="Human Resource Security">Human Resource Security</option>
+                    <option value="IT Security">IT Security</option>
+                    <option value="Access Control">Access Control</option>
+                    <option value="Change Management">Change Management</option>
+                </select>
+                <button class="btn btn-primary" onclick="filterQuestions()">Filter</button>
+                <button class="btn btn-success" onclick="addQuestion()">Add Question</button>
+                <button class="btn btn-warning" onclick="sendQuestions()">Send via Email</button>
+                <button class="btn btn-info" onclick="exportCSV()">Export Report</button>
+            </div>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Control Group</th>
+                    <th>Question</th>
+                    <th>Reference</th>
+                    <th>Domain</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="questionsTable"></tbody>
+        </table>
+    </div>
+
+    <!-- Bulk Upload Section -->
+    <div id="bulk" class="section" style="display:none;">
+        <h2>Bulk Upload Questions</h2>
+        <input type="file" id="excelFile" accept=".xlsx,.xls" class="form-control mb-2" />
+        <button class="btn btn-primary" onclick="uploadExcel()">Upload Excel</button>
+    </div>
+
+    <!-- Logos Upload Section -->
+    <div id="logos" class="section" style="display:none;">
+        <h2>Upload Logos</h2>
+        <div class="mb-3">
+            <label>Type:</label>
+            <select id="logoType" class="form-select" style="width:200px;">
+                <option value="auditor">Auditor</option>
+                <option value="client">Client</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <input type="file" id="logoFile" class="form-control" />
+        </div>
+        <button class="btn btn-primary" onclick="uploadLogo()">Upload Logo</button>
+    </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+
+// --- Navigation ---
+function showSection(id){
+    document.querySelectorAll('.section').forEach(s => s.style.display='none');
+    document.getElementById(id).style.display='block';
+}
+
+// --- Questions ---
+let allQuestions = [];
+async function loadQuestions() {
+    const resp = await fetch(API + '/questions');
+    allQuestions = await resp.json();
+    displayQuestions(allQuestions);
+}
+
+function displayQuestions(data){
+    const tbody = document.getElementById('questionsTable');
+    tbody.innerHTML = '';
+    data.forEach(q=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="checkbox" value="${q.id}" /></td>
+            <td>${q.control_group}</td>
+            <td>${q.question}</td>
+            <td>${q.reference || ''}</td>
+            <td>${q.domain}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteQuestion(${q.id})"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function filterQuestions(){
+    const domain = document.getElementById('questionDomainFilter').value;
+    const filtered = domain ? allQuestions.filter(q=> q.domain===domain) : allQuestions;
+    displayQuestions(filtered);
+}
+
+async function addQuestion() {
+    const control_group = prompt("Control Group (e.g. Control 1 - General Overview):");
+    if(!control_group) return;
+    const question = prompt("Question text:");
+    if(!question) return;
+    const reference = prompt("Reference:");
+    
+    await fetch(API + '/questions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({control_group, question, reference})
+    });
+    loadQuestions();
+}
+
+async function deleteQuestion(id){
+    if(!confirm("Delete this question?")) return;
+    await fetch(`${API}/questions/${id}`, { method:'DELETE' });
+    loadQuestions();
+}
+
+// --- Bulk Excel ---
+async function uploadExcel() {
+    const file = document.getElementById("excelFile").files[0];
+    if(!file) return alert("Select an Excel file first.");
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch(API+"/upload-excel", {method:"POST", body: form});
+    const data = await response.json();
+    alert("Inserted " + data.inserted + " questions!");
+    loadQuestions();
+}
+
+// --- Send Questions via Email with dynamic sender ---
+async function sendQuestions() {
+    const selected = Array.from(document.querySelectorAll('#questionsTable input[type=checkbox]:checked'))
+        .map(cb => parseInt(cb.value));
+    if(selected.length===0) return alert("Select at least one question");
+    
+    const email = prompt("Enter recipient email:");
+    if(!email) return;
+    
+    const senderEmail = prompt("Enter your sender email (Gmail recommended):");
+    if(!senderEmail) return;
+    const senderPass = prompt("Enter your email password or app password:");
+    if(!senderPass) return;
+
+    const resp = await fetch(API+'/send-questions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email, questionIds:selected, senderEmail, senderPass})
+    });
+    const data = await resp.json();
+    if(data.error) alert("Error: " + data.error);
+    else alert("Sent " + (data.sent||0) + " questions to " + email);
+}
+
+// --- Logo Upload ---
+async function uploadLogo() {
+    const file = document.getElementById("logoFile").files[0];
+    const type = document.getElementById("logoType").value;
+    if(!file) return alert("Select a file first.");
+    const form = new FormData();
+    form.append("logo", file);
+    form.append("type", type);
+    const resp = await fetch(API+'/logos', {method:'POST', body: form});
+    const data = await resp.json();
+    if(data.success) alert("Logo uploaded successfully!");
+    else alert("Error: " + (data.error||""));
+}
+
+// --- Export CSV ---
+function exportCSV() {
+    const headers = ['Control Group','Question','Reference','Domain'];
+    const rows = allQuestions.map(q => [q.control_group,q.question,q.reference||'',q.domain]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v=>`"${v.replace(/"/g,'""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'questions_report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// --- Initial Load ---
+loadQuestions();
+</script>
+
+</body>
+</html>

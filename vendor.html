@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vendor Portal</title>
+<style>
+body{font-family:Arial;padding:20px;background:#f4f6f9;}
+.container{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:8px;}
+input,textarea{width:100%;padding:8px;margin-bottom:10px;}
+button{padding:10px;background:#5A67D8;color:white;border:none;border-radius:4px;cursor:pointer;}
+.question-box{border:1px solid #ccc;padding:10px;margin-bottom:15px;}
+.evidence{font-size:12px;color:green;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Vendor Login</h2>
+  <input id="vendorCode" placeholder="Enter Vendor Code">
+  <button onclick="vendorLogin()">Login</button>
+
+  <div id="vendorSection" style="display:none;">
+    <h2 id="vendorTitle"></h2>
+    <div id="questionsContainer"></div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:3000";
+let vendorId = null;
+
+// ---------------- LOGIN -------------------
+async function vendorLogin(){
+  const code = document.getElementById("vendorCode").value.trim();
+  if(!code) return alert("Enter vendor code");
+
+  const res = await fetch(API + "/vendor-login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ code })
+  });
+
+  if(res.status === 404){
+    alert("Invalid vendor code");
+    return;
+  }
+
+  const vendor = await res.json();
+  vendorId = vendor.id;
+
+  document.getElementById("vendorTitle").innerText =
+      `Welcome, ${vendor.name}`;
+  document.getElementById("vendorSection").style.display = "block";
+
+  loadQuestions();
+}
+
+// ---------------- LOAD ASSIGNED QUESTIONS -------------------
+async function loadQuestions(){
+  const res = await fetch(API + "/vendor-assigned/" + vendorId);
+  const questions = await res.json();
+
+  const container = document.getElementById("questionsContainer");
+  container.innerHTML = "";
+
+  questions.forEach(q => {
+    const div = document.createElement("div");
+    div.className = "question-box";
+
+    div.innerHTML = `
+      <b>${q.control}</b><br>
+      ${q.description}<br><br>
+
+      <textarea id="response_${q.id}" placeholder="Enter response">${q.response}</textarea>
+
+      <label>Evidence File:</label>
+      <input type="file" id="file_${q.id}">
+      ${q.evidence ? `<div class='evidence'>Uploaded: ${q.evidence}</div>` : ""}
+
+      <button onclick="saveResponse(${q.id})">Save</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+// ---------------- SAVE RESPONSE -------------------
+async function saveResponse(qId){
+  let filename = "";
+
+  // If file selected, upload it
+  const fileInput = document.getElementById("file_" + qId);
+  if(fileInput.files.length > 0){
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const uploadRes = await fetch(API + "/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const fileData = await uploadRes.json();
+    filename = fileData.file;
+  }
+
+  const responseText = document.getElementById("response_" + qId).value;
+
+  await fetch(API + "/vendor-response", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      vendor_id: vendorId,
+      question_id: qId,
+      response: responseText,
+      evidence: filename
+    })
+  });
+
+  alert("Saved!");
+  loadQuestions();
+}
+</script>
+
+</body>
+</html>
