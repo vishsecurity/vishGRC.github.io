@@ -1,7 +1,3 @@
-Perfect! Here's a **clean README + working `server.js` + `admin.html` setup** for your GRC TPRM dashboard. This integrates everything: SQLite DB, API endpoints, client/vendor/question management, and frontend display.
-
----
-
 ## **README.md**
 
 ````markdown
@@ -72,4 +68,5 @@ project/
 4. Open `admin.html` in your browser.
 
 The frontend will automatically interact with your SQLite DB via the API.
+
 
