@@ -1,349 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audit Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
-    header { background:#333; color:#fff; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
-    nav button { margin-right:10px; }
-    main { padding:20px; }
-    table { width:100%; border-collapse: collapse; margin-bottom:20px; }
-    table, th, td { border:1px solid #ccc; }
-    th, td { padding:8px; text-align:left; }
-    input, select, textarea { padding:5px; margin:5px 0; width:100%; }
-    .hidden { display:none; }
-    .btn { padding:5px 10px; cursor:pointer; }
-    .btn-danger { background:red; color:#fff; border:none; }
-    .btn-primary { background:blue; color:#fff; border:none; }
-    .btn-small { font-size:0.8em; padding:3px 6px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPRM Portal</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="container py-4">
 
-<header>
-  <div><strong>Audit Dashboard</strong></div>
-  <div id="user-info" class="hidden">
-    Logged in as <span id="username"></span>
-    <button id="logout" class="btn btn-small">Logout</button>
-  </div>
-</header>
+  <!-- LOGIN -->
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input id="username" placeholder="Username" class="form-control mb-2">
+    <input id="password" placeholder="Password" type="password" class="form-control mb-2">
+    <button class="btn btn-primary mb-3" onclick="adminLogin()">Login</button>
 
-<main>
-  <div id="login-section">
-    <h2>Login</h2>
-    <form id="login-form">
-      <label>Username</label>
-      <input type="text" id="login-username" required>
-      <label>Password</label>
-      <input type="password" id="login-password" required>
-      <button type="submit" class="btn btn-primary">Login</button>
-    </form>
-    <div id="login-error" style="color:red;"></div>
+    <h2>Vendor Login</h2>
+    <input id="vendorEmail" placeholder="Email" class="form-control mb-2">
+    <button class="btn btn-success" onclick="vendorLogin()">Login</button>
   </div>
 
-  <div id="dashboard-section" class="hidden">
-    <nav>
-      <button data-tab="users" class="btn btn-small">Users</button>
-      <button data-tab="vendors" class="btn btn-small">Vendors</button>
-      <button data-tab="questions" class="btn btn-small">Questions</button>
-      <button data-tab="responses" class="btn btn-small">Responses</button>
-      <button data-tab="progress" class="btn btn-small">Progress</button>
-    </nav>
+  <button id="logoutBtn" class="btn btn-warning hidden mb-3">Logout</button>
 
-    <section id="users-tab" class="tab hidden">
-      <h2>Users</h2>
-      <form id="user-form">
-        <input type="hidden" id="user-id">
-        <label>Username</label>
-        <input type="text" id="user-username" required>
-        <label>Password</label>
-        <input type="password" id="user-password">
-        <label>Role</label>
-        <select id="user-role">
-          <option value="admin">Admin</option>
-          <option value="auditor">Auditor</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Save</button>
-      </form>
-      <table>
-        <thead>
-          <tr><th>ID</th><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="users-table"></tbody>
-      </table>
-    </section>
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminSection" class="hidden">
+    <h3>Vendors (<span id="totalVendors">0</span>)</h3>
+    <table class="table table-bordered" id="vendorsTable"></table>
 
-    <section id="vendors-tab" class="tab hidden">
-      <h2>Vendors</h2>
-      <form id="vendor-form">
-        <input type="hidden" id="vendor-id">
-        <label>Name</label>
-        <input type="text" id="vendor-name" required>
-        <label>Email</label>
-        <input type="email" id="vendor-email" required>
-        <label>Type</label>
-        <input type="text" id="vendor-type" required>
-        <button type="submit" class="btn btn-primary">Save</button>
-      </form>
-      <table>
-        <thead>
-          <tr><th>ID</th><th>Name</th><th>Email</th><th>Type</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="vendors-table"></tbody>
-      </table>
-    </section>
-
-    <section id="questions-tab" class="tab hidden">
-      <h2>Audit Questions</h2>
-      <form id="question-form">
-        <input type="hidden" id="question-id">
-        <label>Control Name</label>
-        <input type="text" id="question-control" required>
-        <label>Question</label>
-        <textarea id="question-text" required></textarea>
-        <label>Reference</label>
-        <input type="text" id="question-ref">
-        <button type="submit" class="btn btn-primary">Save</button>
-      </form>
-      <table>
-        <thead>
-          <tr><th>ID</th><th>Control</th><th>Question</th><th>Reference</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="questions-table"></tbody>
-      </table>
-    </section>
-
-    <section id="responses-tab" class="tab hidden">
-      <h2>Responses</h2>
-      <form id="response-form" enctype="multipart/form-data">
-        <label>Vendor</label>
-        <select id="response-vendor" required></select>
-        <label>Question</label>
-        <select id="response-question" required></select>
-        <label>Remark</label>
-        <textarea id="response-remark"></textarea>
-        <label>Evidence File</label>
-        <input type="file" id="response-file">
-        <button type="submit" class="btn btn-primary">Submit Response</button>
-      </form>
-      <table>
-        <thead>
-          <tr><th>ID</th><th>Vendor</th><th>Question</th><th>Remark</th><th>Evidence</th></tr>
-        </thead>
-        <tbody id="responses-table"></tbody>
-      </table>
-    </section>
-
-    <section id="progress-tab" class="tab hidden">
-      <h2>Progress</h2>
-      <table>
-        <thead>
-          <tr><th>Vendor</th><th>Type</th><th>Answered</th><th>Total Questions</th><th>Completion %</th></tr>
-        </thead>
-        <tbody id="progress-table"></tbody>
-      </table>
-    </section>
+    <h3>Responses (<span id="totalResponses">0</span>)</h3>
+    <table class="table table-bordered" id="responsesTable"></table>
   </div>
-</main>
+
+  <!-- VENDOR SECTION -->
+  <div id="vendorSection" class="hidden">
+    <h3>Questions</h3>
+    <div class="accordion" id="questionsContainer"></div>
+  </div>
+</div>
 
 <script>
-const API = '/api';
-let currentUser = null;
+const API = "http://localhost:4000";
+let token = localStorage.getItem("token");
+let role = localStorage.getItem("role");
+let userId = localStorage.getItem("userId");
 
-// --- Login ---
-document.getElementById('login-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const username = document.getElementById('login-username').value;
-  const password = document.getElementById('login-password').value;
-  const res = await fetch(API + '/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
-  const data = await res.json();
-  if(data.success){
-    currentUser = data.user;
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('dashboard-section').classList.remove('hidden');
-    document.getElementById('user-info').classList.remove('hidden');
-    document.getElementById('username').textContent = currentUser.username;
-    loadAllTabs();
-  } else {
-    document.getElementById('login-error').textContent = data.error || 'Login failed';
-  }
-});
-
-document.getElementById('logout').addEventListener('click', () => location.reload());
-
-// --- Tabs ---
-document.querySelectorAll('nav button').forEach(btn => btn.addEventListener('click', e => {
-  document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
-  const tab = document.getElementById(btn.dataset.tab+'-tab');
-  tab.classList.remove('hidden');
-}));
-
-// --- Users ---
-const usersTable = document.getElementById('users-table');
-const userForm = document.getElementById('user-form');
-userForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const id = document.getElementById('user-id').value;
-  const username = document.getElementById('user-username').value;
-  const password = document.getElementById('user-password').value;
-  const role = document.getElementById('user-role').value;
-  let url = API+'/users';
-  let method = 'POST';
-  if(id){ url += '/'+id; method='PUT'; }
-  const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password,role}) });
-  if(res.ok){ loadUsers(); userForm.reset(); document.getElementById('user-id').value=''; }
-});
-
-async function loadUsers(){
-  usersTable.innerHTML='';
-  const res = await fetch(API+'/users');
-  const users = await res.json();
-  users.forEach(u=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${u.id}</td><td>${u.username}</td><td>${u.role}</td><td>${u.created_at}</td>
-      <td>
-        <button class="btn btn-small" onclick="editUser(${u.id},'${u.username}','${u.role}')">Edit</button>
-        <button class="btn btn-small btn-danger" onclick="deleteUser(${u.id})">Delete</button>
-      </td>`;
-    usersTable.appendChild(tr);
-  });
-}
-window.editUser=(id,username,role)=>{
-  document.getElementById('user-id').value=id;
-  document.getElementById('user-username').value=username;
-  document.getElementById('user-role').value=role;
-};
-window.deleteUser=async id=>{ if(confirm('Delete user?')){ await fetch(API+'/users/'+id,{method:'DELETE'}); loadUsers(); } };
-
-// --- Vendors ---
-const vendorsTable = document.getElementById('vendors-table');
-const vendorForm = document.getElementById('vendor-form');
-vendorForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const id = document.getElementById('vendor-id').value;
-  const name = document.getElementById('vendor-name').value;
-  const email = document.getElementById('vendor-email').value;
-  const type = document.getElementById('vendor-type').value;
-  let url = API+'/vendors';
-  let method='POST';
-  if(id){ url+='/'+id; method='PUT'; }
-  const res = await fetch(url,{method, headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,type})});
-  if(res.ok){ loadVendors(); vendorForm.reset(); document.getElementById('vendor-id').value=''; }
-});
-
-async function loadVendors(){
-  vendorsTable.innerHTML='';
-  const res = await fetch(API+'/vendors');
-  const vendors = await res.json();
-  const vendorSelect = document.getElementById('response-vendor');
-  vendorSelect.innerHTML='<option value="">Select Vendor</option>';
-  vendors.forEach(v=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${v.id}</td><td>${v.name}</td><td>${v.email}</td><td>${v.type}</td>
-      <td>
-        <button class="btn btn-small" onclick="editVendor(${v.id},'${v.name}','${v.email}','${v.type}')">Edit</button>
-        <button class="btn btn-small btn-danger" onclick="deleteVendor(${v.id})">Delete</button>
-      </td>`;
-    vendorsTable.appendChild(tr);
-    vendorSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`;
-  });
-}
-window.editVendor=(id,name,email,type)=>{
-  document.getElementById('vendor-id').value=id;
-  document.getElementById('vendor-name').value=name;
-  document.getElementById('vendor-email').value=email;
-  document.getElementById('vendor-type').value=type;
-};
-window.deleteVendor=async id=>{ if(confirm('Delete vendor?')){ await fetch(API+'/vendors/'+id,{method:'DELETE'}); loadVendors(); } };
-
-// --- Questions ---
-const questionsTable = document.getElementById('questions-table');
-const questionForm = document.getElementById('question-form');
-questionForm.addEventListener('submit', async e=>{
-  e.preventDefault();
-  const id = document.getElementById('question-id').value;
-  const control_name = document.getElementById('question-control').value;
-  const question = document.getElementById('question-text').value;
-  const reference = document.getElementById('question-ref').value;
-  let url = API+'/questions';
-  let method='POST';
-  if(id){ url+='/'+id; method='PUT'; }
-  const res = await fetch(url,{method, headers:{'Content-Type':'application/json'}, body:JSON.stringify({control_name,question,reference})});
-  if(res.ok){ loadQuestions(); questionForm.reset(); document.getElementById('question-id').value=''; }
-});
-async function loadQuestions(){
-  questionsTable.innerHTML='';
-  const res = await fetch(API+'/questions');
-  const questions = await res.json();
-  const questionSelect = document.getElementById('response-question');
-  questionSelect.innerHTML='<option value="">Select Question</option>';
-  questions.forEach(q=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML=`<td>${q.id}</td><td>${q.control_name}</td><td>${q.question}</td><td>${q.reference || ''}</td>
-      <td>
-        <button class="btn btn-small" onclick="editQuestion(${q.id},'${q.control_name}','${q.question}','${q.reference || ''}')">Edit</button>
-        <button class="btn btn-small btn-danger" onclick="deleteQuestion(${q.id})">Delete</button>
-      </td>`;
-    questionsTable.appendChild(tr);
-    questionSelect.innerHTML += `<option value="${q.id}">${q.control_name} - ${q.question}</option>`;
-  });
-}
-window.editQuestion=(id,control,question,ref)=>{
-  document.getElementById('question-id').value=id;
-  document.getElementById('question-control').value=control;
-  document.getElementById('question-text').value=question;
-  document.getElementById('question-ref').value=ref;
-};
-window.deleteQuestion=async id=>{ if(confirm('Delete question?')){ await fetch(API+'/questions/'+id,{method:'DELETE'}); loadQuestions(); } };
-
-// --- Responses ---
-const responsesTable = document.getElementById('responses-table');
-const responseForm = document.getElementById('response-form');
-responseForm.addEventListener('submit', async e=>{
-  e.preventDefault();
-  const vendor_id = document.getElementById('response-vendor').value;
-  const question_id = document.getElementById('response-question').value;
-  const remark = document.getElementById('response-remark').value;
-  const file = document.getElementById('response-file').files[0];
-  const formData = new FormData();
-  formData.append('vendor_id',vendor_id);
-  formData.append('question_id',question_id);
-  formData.append('remark',remark);
-  if(file) formData.append('evidence',file);
-  const res = await fetch(API+'/responses',{method:'POST', body:formData});
-  if(res.ok){ loadResponses(); responseForm.reset(); }
-});
-async function loadResponses(){
-  responsesTable.innerHTML='';
-  const res = await fetch(API+'/responses');
-  const responses = await res.json();
-  responses.forEach(r=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML=`<td>${r.id}</td><td>${r.vendor_name}</td><td>${r.question}</td><td>${r.remark || ''}</td>
-      <td>${r.evidence_name ? `<a href="/${r.evidence}" target="_blank">${r.evidence_name}</a>` : ''}</td>`;
-    responsesTable.appendChild(tr);
-  });
+// Auto-login
+if (token && role) {
+  document.getElementById("loginSection").classList.add("hidden");
+  document.getElementById("logoutBtn").classList.remove("hidden");
+  if(role==="admin") loadAdmin();
+  if(role==="vendor") loadVendor();
 }
 
-// --- Progress ---
-const progressTable = document.getElementById('progress-table');
-async function loadProgress(){
-  progressTable.innerHTML='';
-  const res = await fetch(API+'/progress');
-  const progress = await res.json();
-  progress.forEach(p=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML=`<td>${p.name}</td><td>${p.type}</td><td>${p.answered}</td><td>${p.total_questions}</td><td>${p.completion_percent}%</td>`;
-    progressTable.appendChild(tr);
+// API helper
+async function apiCall(url, options={}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      ...(options.body instanceof FormData ? {} : {"Content-Type":"application/json"}),
+      Authorization: `Bearer ${token}`
+    }
   });
+  if(res.status===401){ localStorage.clear(); location.reload(); throw new Error("Session expired"); }
+  return res;
 }
 
-// --- Load all tabs ---
-function loadAllTabs(){ loadUsers(); loadVendors(); loadQuestions(); loadResponses(); loadProgress(); }
+// LOGIN
+async function adminLogin() {
+  try{
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const res = await apiCall(`${API}/login`, {method:"POST", body: JSON.stringify({username,password})});
+    const data = await res.json();
+    if(res.ok) saveAuth(data); else alert(data.error || "Login failed");
+  } catch(e){ alert("Network error"); }
+}
 
+async function vendorLogin() {
+  try{
+    const email = document.getElementById("vendorEmail").value;
+    const res = await apiCall(`${API}/vendor-login`, {method:"POST", body: JSON.stringify({email})});
+    const data = await res.json();
+    if(res.ok) saveAuth(data); else alert(data.error || "Vendor login failed");
+  } catch(e){ alert("Network error"); }
+}
+
+// Save auth
+function saveAuth(data){
+  token = data.token; role = data.role; userId = data.id;
+  localStorage.setItem("token", token);
+  localStorage.setItem("role", role);
+  localStorage.setItem("userId", userId);
+  document.getElementById("loginSection").classList.add("hidden");
+  document.getElementById("logoutBtn").classList.remove("hidden");
+  if(role==="admin") loadAdmin();
+  if(role==="vendor") loadVendor();
+}
+
+document.getElementById("logoutBtn").onclick = ()=>{ localStorage.clear(); location.reload(); };
+
+// ADMIN
+async function loadAdmin(){
+  try{
+    document.body.classList.add("loading");
+    document.getElementById("adminSection").classList.remove("hidden");
+
+    let v = await apiCall(`${API}/vendors`);
+    let vendors = await v.json();
+    document.getElementById("vendorsTable").innerHTML = buildVendorTable(vendors);
+    document.getElementById("totalVendors").textContent = vendors.length;
+
+    let r = await apiCall(`${API}/responses`);
+    let responses = await r.json();
+    document.getElementById("responsesTable").innerHTML = buildResponsesTable(responses);
+    document.getElementById("totalResponses").textContent = responses.length;
+  } catch(e){ alert("Failed to load data"); }
+  finally{ document.body.classList.remove("loading"); }
+}
+
+function buildVendorTable(vendors){
+  let rows = vendors.map(v=>`<tr><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.name)}</td><td>${escapeHtml(v.email)}</td><td>${escapeHtml(v.type)}</td></tr>`).join("");
+  return `<tr><th>ID</th><th>Name</th><th>Email</th><th>Type</th></tr>${rows}`;
+}
+
+function buildResponsesTable(responses){
+  let rows = responses.map(r=>`
+    <tr>
+      <td>${escapeHtml(r.vendor_name)}</td>
+      <td>${escapeHtml(r.control_name)}</td>
+      <td>${escapeHtml(r.question)}</td>
+      <td>${escapeHtml(r.remark||"-")}</td>
+      <td>${r.evidence_name ? `<i class="bi bi-paperclip"></i> ${escapeHtml(r.evidence_name)}` : "-"}</td>
+      <td>${r.approved? "<span class='badge bg-success'>Approved</span>" : `<button class="btn btn-sm btn-primary" onclick="approve(${r.id})"><i class='bi bi-check2'></i> Approve</button>`}</td>
+    </tr>
+  `).join("");
+  return `<tr><th>Vendor</th><th>Control</th><th>Question</th><th>Remark</th><th>Evidence</th><th>Action</th></tr>${rows}`;
+}
+
+// XSS escape
+function escapeHtml(text){ const div=document.createElement('div'); div.textContent=text; return div.innerHTML; }
+
+async function approve(id){
+  try{ await apiCall(`${API}/responses/${id}/approve`, {method:"PUT"}); loadAdmin(); }
+  catch(e){ alert("Approval failed"); }
+}
+
+// VENDOR
+async function loadVendor(){
+  try{
+    document.body.classList.add("loading");
+    document.getElementById("vendorSection").classList.remove("hidden");
+    let res = await apiCall(`${API}/questions`);
+    let questions = await res.json();
+
+    let html = questions.map((q,i)=>`
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading${i}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${i}">
+            ${escapeHtml(q.control_name)} - ${escapeHtml(q.question)}
+          </button>
+        </h2>
+        <div id="collapse${i}" class="accordion-collapse collapse" data-bs-parent="#questionsContainer">
+          <div class="accordion-body">
+            <textarea id="remark-${q.id}" class="form-control mb-2" placeholder="Your Answer"></textarea>
+            <input type="file" id="file-${q.id}" class="form-control mb-2" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"/>
+            <button class="btn btn-success" onclick="submitResponse(${q.id})"><i class="bi bi-upload"></i> Submit</button>
+            <span id="status-${q.id}" class="badge bg-secondary ms-2" style="display:none;">Submitted</span>
+          </div>
+        </div>
+      </div>
+    `).join("");
+    document.getElementById("questionsContainer").innerHTML = html;
+  } catch(e){ alert("Failed to load questions"); }
+  finally{ document.body.classList.remove("loading"); }
+}
+
+async function submitResponse(qid){
+  try{
+    const remark = document.getElementById(`remark-${qid}`).value;
+    const file = document.getElementById(`file-${qid}`).files[0];
+    const form = new FormData();
+    form.append("question_id", qid);
+    form.append("remark", remark);
+    if(file) form.append("evidence", file);
+
+    const res = await apiCall(`${API}/responses`, {method:"POST", body:form});
+    if(res.ok){
+      document.getElementById(`status-${qid}`).textContent="Submitted";
+      document.getElementById(`status-${qid}`).className="badge bg-success ms-2";
+      document.getElementById(`status-${qid}`).style.display="inline";
+      alert("Submitted successfully!");
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed");
+    }
+  } catch(e){ alert("Submission failed: " + e.message); }
+}
 </script>
 
+<style>
+.hidden { display:none; }
+body.loading { opacity:0.6; pointer-events:none; }
+body.loading::after{
+  content:"Loading..."; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.8); color:white; padding:20px; border-radius:10px; z-index:9999;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

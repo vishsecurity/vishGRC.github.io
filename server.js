@@ -1,387 +1,284 @@
-// server.js
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const multer = require('multer');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
+const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
+const nodemailer = require('nodemailer');
+const morgan = require('morgan');
+const cron = require('node-cron');
+
+['JWT_SECRET', 'SMTP_USER', 'SMTP_PASS'].forEach(key => {
+  if (!process.env[key]) { console.error(`Missing env: ${key}`); process.exit(1); }
+});
 
 const app = express();
+const PORT = process.env.PORT || 4000;
+const db = new sqlite3.Database('./tprm.db');
 
-// --- Middleware ---
-app.use(cors());
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5500', credentials: true }));
+app.use(helmet());
+app.use(morgan('combined'));
 
-// Serve static uploads and the SPA
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, 'public')));
+const limiter = rateLimit({ windowMs: 15*60*1000, max: 100 });
+app.use(limiter);
 
-// --- SQLite setup ---
-const DB_FILE = path.join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(DB_FILE, (err) => {
-  if (err) {
-    console.error('Error opening DB:', err);
-    process.exit(1);
-  }
-  console.log('Connected to SQLite DB');
+if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads', { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, './uploads'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
-
-// Promisified DB helpers
-function runAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this.lastID);
-    });
-  });
-}
-function allAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
-}
-function getAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-}
-
-// --- Create Tables If Not Exist ---
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS vendors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      type TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS audit_questions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      control_name TEXT NOT NULL,
-      question TEXT NOT NULL,
-      reference TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS responses (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      question_id INTEGER NOT NULL,
-      vendor_id INTEGER NOT NULL,
-      evidence TEXT,
-      evidence_name TEXT,
-      remark TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS logos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL,
-      image BLOB,
-      image_name TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Auto‑create default admin if none exists
-  (async () => {
-    try {
-      const row = await getAsync('SELECT COUNT(*) AS count FROM users', []);
-      if (!row || row.count === 0) {
-        const defaultUsername = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
-        const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@123';
-        const hashed = await bcrypt.hash(defaultPassword, 10);
-        await runAsync(
-          'INSERT INTO users(username, password, role) VALUES(?,?,?)',
-          [defaultUsername, hashed, 'admin']
-        );
-        console.log('======================================');
-        console.log('🚀 Default admin user created');
-        console.log(`    username: ${defaultUsername}`);
-        console.log(`    password: ${defaultPassword}`);
-        console.log('======================================');
-      }
-    } catch (err) {
-      console.error('Admin creation error:', err);
-    }
-  })();
-});
-
-// --- File Upload Setup ---
 const upload = multer({
-  dest: path.join(__dirname, 'uploads'),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
-});
-
-// --- API Endpoints ---
-
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'API running' });
-});
-
-// --- Auth ---
-app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
-
-    const user = await getAsync('SELECT * FROM users WHERE username = ?', [username]);
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
-
-    res.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  storage,
+  limits: { fileSize: 10*1024*1024 },
+  fileFilter: (req,file,cb) => {
+    const allowed = /pdf|doc|docx|jpg|png|jpeg/;
+    if (allowed.test(file.mimetype) && allowed.test(path.extname(file.originalname).toLowerCase())) return cb(null,true);
+    cb(new Error('Only PDF, Word, images allowed'));
   }
 });
 
-// --- Users CRUD ---
-app.post('/api/users', async (req, res) => {
-  try {
-    const { username, password, role } = req.body;
-    if (!username || !password || !role) return res.status(400).json({ error: 'username/password/role required' });
+const validate = (req,res,next)=>{
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  next();
+};
 
-    const hashed = await bcrypt.hash(password, 10);
-    const id = await runAsync('INSERT INTO users(username,password,role) VALUES(?,?,?)', [username, hashed, role]);
-    res.status(201).json({ success: true, id, username, role });
-  } catch (err) {
-    if (err.message.includes('UNIQUE constraint')) res.status(409).json({ error: 'Username already exists' });
-    else res.status(500).json({ error: 'Internal server error' });
-  }
-});
+const authenticateToken = (req,res,next)=>{
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if(!token) return res.sendStatus(401);
+  jwt.verify(token, process.env.JWT_SECRET, (err,user)=>{
+    if(err) return res.sendStatus(403);
+    req.user=user;
+    next();
+  });
+};
 
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await allAsync('SELECT id, username, role, created_at FROM users', []);
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+const authorizeRoles = (...roles) => (req,res,next)=>{
+  if(!roles.includes(req.user.role)) return res.status(403).json({error:'Insufficient permissions'});
+  next();
+};
 
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    const { username, password, role } = req.body;
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid user id' });
+// DB setup
+db.serialize(()=>{
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS vendors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    email TEXT,
+    type TEXT
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS audit_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    control_name TEXT,
+    question TEXT,
+    reference TEXT
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS responses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vendor_id INTEGER,
+    question_id INTEGER,
+    remark TEXT,
+    evidence TEXT,
+    evidence_name TEXT,
+    approved INTEGER DEFAULT 0
+  )`);
+  db.run('CREATE INDEX IF NOT EXISTS idx_responses_vendor ON responses(vendor_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_responses_question ON responses(question_id)');
 
-    let query = 'UPDATE users SET username = ?, role = ?';
-    const params = [username, role];
-
-    if (password) {
-      const hashed = await bcrypt.hash(password, 10);
-      query += ', password = ?';
-      params.push(hashed);
+  // Seed default admin
+  db.get('SELECT COUNT(*) as cnt FROM users', (err,row)=>{
+    if(row?.cnt===0){
+      bcrypt.hash('admin123',10,(err,hash)=>{
+        if(!err){
+          db.run('INSERT INTO users (username,password,role) VALUES (?,?,?)', ['admin',hash,'admin']);
+          console.log('Created default admin: admin/admin123');
+        }
+      });
     }
-    query += ' WHERE id = ?';
-    params.push(id);
+  });
 
-    await runAsync(query, params);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid user id' });
-
-    await runAsync('DELETE FROM users WHERE id = ?', [id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// --- Vendors CRUD ---
-app.post('/api/vendors', async (req, res) => {
-  try {
-    const { name, email, type } = req.body;
-    if (!name || !email || !type) return res.status(400).json({ error: 'name, email, type required' });
-
-    const id = await runAsync('INSERT INTO vendors(name,email,type) VALUES(?,?,?)', [name, email, type]);
-    res.status(201).json({ success: true, id });
-  } catch (err) {
-    if (err.message.includes('UNIQUE constraint')) res.status(409).json({ error: 'Vendor email exists' });
-    else res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/vendors', async (req, res) => {
-  try {
-    const vendors = await allAsync('SELECT * FROM vendors', []);
-    res.json(vendors);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.put('/api/vendors/:id', async (req, res) => {
-  try {
-    const { name, email, type } = req.body;
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid vendor id' });
-
-    await runAsync('UPDATE vendors SET name = ?, email = ?, type = ? WHERE id = ?', [name, email, type, id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/vendors/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid vendor id' });
-
-    await runAsync('DELETE FROM vendors WHERE id = ?', [id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// --- Audit Questions CRUD ---
-app.get('/api/questions', async (req, res) => {
-  try {
-    const questions = await allAsync('SELECT id, control_name, question, reference FROM audit_questions ORDER BY control_name, id', []);
-    res.json(questions);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/api/questions', async (req, res) => {
-  try {
-    const { control_name, question, reference } = req.body;
-    if (!control_name || !question) return res.status(400).json({ error: 'control_name and question required' });
-
-    const id = await runAsync('INSERT INTO audit_questions(control_name,question,reference) VALUES(?,?,?)', [control_name, question, reference || null]);
-    res.status(201).json({ success: true, id });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.put('/api/questions/:id', async (req, res) => {
-  try {
-    const { control_name, question, reference } = req.body;
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid question id' });
-
-    await runAsync('UPDATE audit_questions SET control_name = ?, question = ?, reference = ? WHERE id = ?', [control_name, question, reference || null, id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/questions/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'Invalid question id' });
-
-    await runAsync('DELETE FROM audit_questions WHERE id = ?', [id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// --- Responses ---
-app.post('/api/responses', upload.single('evidence'), async (req, res) => {
-  try {
-    const { question_id, vendor_id, remark } = req.body;
-    if (!question_id || !vendor_id) return res.status(400).json({ error: 'question_id and vendor_id required' });
-
-    let evidencePath = null;
-    let evidenceName = null;
-    if (req.file) {
-      evidencePath = req.file.path;
-      evidenceName = req.file.originalname;
+  // Seed sample question
+  db.get('SELECT COUNT(*) as cnt FROM audit_questions', (err,row)=>{
+    if(row?.cnt===0){
+      db.run("INSERT INTO audit_questions (control_name,question,reference) VALUES (?,?,?)", ['General','Platform technical details?','ISO 27001']);
     }
+  });
+});
 
-    const id = await runAsync(
-      'INSERT INTO responses(question_id,vendor_id,evidence,evidence_name,remark) VALUES(?,?,?,?,?)',
-      [question_id, vendor_id, evidencePath, evidenceName, remark || null]
-    );
-    res.status(201).json({ success: true, id });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+// Response time logging
+app.use((req,res,next)=>{
+  const start=Date.now();
+  res.on('finish',()=>{ console.log(`${req.method} ${req.originalUrl} - ${Date.now()-start}ms`); });
+  next();
+});
+
+// --- LOGIN ---
+app.post('/login', body('username').trim().notEmpty(), body('password').notEmpty(), validate, (req,res)=>{
+  const { username,password } = req.body;
+  db.get('SELECT * FROM users WHERE username=?',[username],(err,user)=>{
+    if(err||!user) return res.status(401).json({error:'Invalid credentials'});
+    bcrypt.compare(password,user.password,(err,match)=>{
+      if(!match) return res.status(401).json({error:'Invalid credentials'});
+      const token = jwt.sign({id:user.id,role:user.role},process.env.JWT_SECRET,{expiresIn:'8h'});
+      res.json({token, role:user.role, id:user.id});
+    });
+  });
+});
+
+app.post('/vendor-login', body('email').isEmail(), validate, (req,res)=>{
+  const { email } = req.body;
+  db.get('SELECT * FROM vendors WHERE email=?',[email],(err,vendor)=>{
+    if(!vendor) return res.status(401).json({error:'Vendor not found'});
+    const token = jwt.sign({id:vendor.id,role:'vendor'},process.env.JWT_SECRET,{expiresIn:'8h'});
+    res.json({token, role:'vendor', id:vendor.id});
+  });
+});
+
+// --- VENDORS CRUD ---
+app.post('/vendors', authenticateToken, authorizeRoles('admin'),
+  body('name').trim().notEmpty(),
+  body('email').isEmail(),
+  body('type').isIn(['vendor','client']),
+  validate,
+  (req,res)=>{
+    const { name,email,type } = req.body;
+    db.run('INSERT INTO vendors (name,email,type) VALUES (?,?,?)',[name,email,type], function(err){
+      if(err) return res.status(500).json({error:err.message});
+      res.json({id:this.lastID,name,email});
+    });
   }
+);
+app.get('/vendors', authenticateToken, authorizeRoles('admin'), (req,res)=>{
+  db.all('SELECT * FROM vendors', (err,rows)=>{ if(err) return res.status(500).json({error:err.message}); res.json(rows); });
+});
+app.get('/vendors/:id', authenticateToken, authorizeRoles('admin','vendor'), (req,res)=>{
+  db.get('SELECT * FROM vendors WHERE id=?',[req.params.id],(err,vendor)=>{ if(err||!vendor) return res.status(404).json({error:'Vendor not found'}); res.json(vendor); });
 });
 
-app.get('/api/responses', async (req, res) => {
-  try {
-    const rows = await allAsync(`
-      SELECT r.id, r.remark, r.evidence, r.evidence_name,
-             q.control_name, q.question,
-             v.name AS vendor_name
-      FROM responses r
-      JOIN audit_questions q ON r.question_id = q.id
-      JOIN vendors v ON r.vendor_id = v.id
-      ORDER BY r.created_at DESC
-    `);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+// --- QUESTIONS ---
+app.get('/questions', authenticateToken, authorizeRoles('vendor','admin','auditor'), (req,res)=>{
+  db.all('SELECT * FROM audit_questions ORDER BY control_name',(err,rows)=>{ if(err) return res.status(500).json({error:err.message}); res.json(rows); });
+});
+
+// --- RESPONSES ---
+app.post('/responses', authenticateToken, authorizeRoles('vendor'), upload.single('evidence'),
+  body('question_id').isInt(), body('remark').optional().trim(), validate, (req,res)=>{
+    const { question_id, remark } = req.body;
+    db.get('SELECT id FROM responses WHERE vendor_id=? AND question_id=?', [req.user.id, question_id], (err, existing)=>{
+      if(existing) return res.status(400).json({error:'Already submitted'});
+      const evidence = req.file?.filename;
+      const evidence_name = req.file?.originalname;
+      db.run('INSERT INTO responses (vendor_id,question_id,remark,evidence,evidence_name) VALUES (?,?,?,?,?)',
+        [req.user.id, question_id, remark, evidence, evidence_name], function(err){
+          if(err) return res.status(500).json({error:err.message});
+          res.json({id:this.lastID});
+        });
+    });
   }
+);
+
+app.get('/responses', authenticateToken, authorizeRoles('admin','auditor'), (req,res)=>{
+  const { vendor_id } = req.query;
+  let sql=`SELECT r.*, v.name as vendor_name, q.question, q.control_name
+           FROM responses r
+           JOIN vendors v ON r.vendor_id=v.id
+           JOIN audit_questions q ON r.question_id=q.id`;
+  const params=[];
+  if(vendor_id){sql+=' WHERE r.vendor_id=?'; params.push(vendor_id);}
+  db.all(sql,params,(err,rows)=>{ if(err) return res.status(500).json({error:err.message}); res.json(rows); });
 });
 
-// --- Progress ---
-app.get('/api/progress', async (req, res) => {
-  try {
-    const rows = await allAsync(`
-      SELECT v.id AS vendor_id, v.name, v.type,
-             COUNT(r.id) AS answered,
-             (SELECT COUNT(*) FROM audit_questions) AS total_questions,
-             CASE WHEN (SELECT COUNT(*) FROM audit_questions)=0 THEN 0
-                  ELSE ROUND(COUNT(r.id)*100.0/(SELECT COUNT(*) FROM audit_questions),2) END AS completion_percent
-      FROM vendors v
-      LEFT JOIN responses r ON v.id=r.vendor_id
-      GROUP BY v.id, v.name, v.type
-    `, []);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+// --- APPROVE ---
+app.put('/responses/:id/approve', authenticateToken, authorizeRoles('admin'), (req,res)=>{
+  db.run('UPDATE responses SET approved=1 WHERE id=?',[req.params.id], function(err){
+    if(err) return res.status(500).json({error:err.message});
+    res.json({success:true});
+  });
+});
+
+// --- SEND QUESTIONNAIRE ---
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure:false,
+  auth:{user:process.env.SMTP_USER, pass:process.env.SMTP_PASS}
+});
+app.post('/send-questionnaire', authenticateToken, authorizeRoles('admin'),
+  body('vendor_id').isInt(), validate,
+  (req,res)=>{
+    const { vendor_id } = req.body;
+    db.get('SELECT * FROM vendors WHERE id=?',[vendor_id], async(err,vendor)=>{
+      if(!vendor) return res.status(400).json({error:'Vendor not found'});
+      try{
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: vendor.email,
+          subject:'TPRM Questionnaire',
+          text:`${process.env.CLIENT_URL}/vendor/${vendor.id}`
+        });
+        res.json({success:true});
+      }catch(e){ console.error(e); res.status(500).json({error:'Email failed'}); }
+    });
   }
+);
+
+// --- DASHBOARD ---
+app.get('/dashboard', authenticateToken, authorizeRoles('admin'), (req,res)=>{
+  db.all(`SELECT v.name,
+                 COUNT(r.id) as total_responses,
+                 COUNT(CASE WHEN r.remark IS NOT NULL THEN 1 END) as answered
+          FROM vendors v LEFT JOIN responses r ON v.id=r.vendor_id
+          GROUP BY v.id`, (err,rows)=> res.json(rows));
 });
 
-// --- SPA fallback ---
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// --- EXPORT CSV ---
+app.get('/export/responses', authenticateToken, authorizeRoles('admin'), (req,res)=>{
+  db.all('SELECT * FROM responses',(err,rows)=>{
+    const { Parser } = require('json2csv');
+    const csv = new Parser().parse(rows);
+    res.header('Content-Type','text/csv');
+    res.attachment('responses.csv');
+    res.send(csv);
+  });
 });
 
-// 404 for API
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+app.use('/uploads', express.static('uploads'));
 
-// --- Start Server ---
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// --- 404 ---
+app.use((req,res)=>{ res.status(404).json({error:'Route not found'}); });
+
+// --- ERROR ---
+app.use((err,req,res,next)=>{ console.error(err.stack); res.status(500).json({error:'Something went wrong!'}); });
+
+// --- Cron cleanup uploads ---
+cron.schedule('0 0 * * *', ()=>{
+  const cutoff = Date.now() - 30*24*60*60*1000;
+  fs.readdirSync('uploads').forEach(file=>{
+    if(fs.statSync(`uploads/${file}`).mtime<cutoff) fs.unlinkSync(`uploads/${file}`);
+  });
+});
+
+process.on('SIGINT', ()=>{
+  db.close(err=>{ if(err) console.error(err.message); console.log('DB closed.'); process.exit(0); });
+});
+
+app.get('/health',(req,res)=>res.json({status:'OK', timestamp:new Date().toISOString()}));
+
+app.listen(PORT,()=>console.log(`Server running on port ${PORT}`));

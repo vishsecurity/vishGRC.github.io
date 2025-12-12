@@ -1,26 +1,25 @@
 {
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.3",
-    "body-parser": "^2.2.1",
-    "cors": "^2.8.5",
-    "express": "^5.2.1",
-    "multer": "^2.0.2",
-    "nodemailer": "^7.0.11",
-    "open": "^11.0.0",
-    "sqlite3": "^5.1.7",
-    "xlsx": "^0.18.5"
-  },
-  "name": "acquisory-tprm",
+  "name": "tprm",
   "version": "1.0.0",
-  "description": "Perfect! Let’s build a **clean, fully working `server.js`** and `admin.html` setup for your dashboard with SQLite. I’ll also include a **README** explaining everything, prerequisites, and libraries.",
+  "description": "TPRM App with SQLite",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.1",
+    "express-rate-limit": "^6.10.1",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.1",
+    "jsonwebtoken": "^9.1.1",
+    "multer": "^1.4.5-lts.1",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.2",
+    "nodemailer": "^6.9.4",
+    "sqlite3": "^5.1.6",
+    "json2csv": "^6.1.0"
+  }
 }
