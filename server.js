@@ -14,6 +14,7 @@ const nodemailer = require('nodemailer');
 const morgan = require('morgan');
 const cron = require('node-cron');
 
+// Check required env variables
 ['JWT_SECRET', 'SMTP_USER', 'SMTP_PASS'].forEach(key => {
   if (!process.env[key]) { console.error(`Missing env: ${key}`); process.exit(1); }
 });
