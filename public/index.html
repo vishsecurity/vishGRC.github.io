@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acquisory TPRM Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; color: #1e293b;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { 
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); 
+            border-radius: 24px; padding: 30px; text-align: center; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25); margin-bottom: 30px;
+        }
+        .tabs { display: flex; background: rgba(255,255,255,0.95); border-radius: 20px; margin-bottom: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .tab { flex: 1; padding: 20px; background: none; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; color: #64748b; }
+        .tab:hover { background: rgba(79,70,229,0.1); color: #4f46e5; }
+        .tab.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; }
+        .panel { display: none; background: rgba(255,255,255,0.95); border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+        .panel.active { display: block; }
+        #loginModal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 1000; display: flex; 
+            align-items: center; justify-content: center; 
+        }
+        .login-box { 
+            background: rgba(255,255,255,0.95); padding: 40px; border-radius: 24px; 
+            max-width: 400px; width: 90%; text-align: center; 
+        }
+        .login-input { 
+            width: 100%; padding: 16px; margin: 12px 0; border: 2px solid #e2e8f0; 
+            border-radius: 12px; font-size: 16px; box-sizing: border-box; 
+        }
+        .btn { 
+            padding: 14px 24px; border: none; border-radius: 12px; font-weight: 600; 
+            cursor: pointer; background: linear-gradient(135deg, #4f46e5, #7c3aed); 
+            color: white; width: 100%; font-size: 16px; 
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); gap: 24px; margin-bottom: 40px; }
+        .stat-card { background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 3rem; font-weight: 800; color: #4f46e5; }
+        .table-container { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 20px; text-align: left; }
+        th { background: rgba(79,70,229,0.1); font-weight: 600; }
+        tr:hover { background: rgba(79,70,229,0.05); }
+    </style>
+</head>
+<body>
+    <!-- LOGIN MODAL - NO INLINE HANDLERS -->
+    <div id="loginModal">
+        <div class="login-box">
+            <h2><i class="fas fa-shield-alt" style="color: #4f46e5; font-size: 2rem;"></i></h2>
+            <h3>TPRM Admin Login</h3>
+            <input id="username" class="login-input" type="text" placeholder="admin" value="admin">
+            <input id="password" class="login-input" type="password" placeholder="admin123" value="admin123">
+            <button id="loginBtn" class="btn">Login</button>
+            <p style="color: #64748b; font-size: 14px; margin-top: 16px;">Default: admin / admin123</p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="container" id="dashboard" style="display: none;">
+        <div class="header">
+            <h1><i class="fas fa-shield-halved"></i> Acquisory TPRM</h1>
+            <p>Production Dashboard | <span id="lastUpdate">--</span> | 
+                <button id="refreshBtn" class="btn" style="width: auto; padding: 8px 16px; font-size: 14px;">Refresh</button>
+            </p>
+        </div>
+
+        <!-- TABS - NO INLINE HANDLERS -->
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="dashboard-tab">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button class="tab" data-tab="vendors-tab">
+                <i class="fas fa-building"></i> Vendors
+            </button>
+            <button class="tab" data-tab="assessments-tab">
+                <i class="fas fa-clipboard-list"></i> Assessments
+            </button>
+            <button class="tab" data-tab="risks-tab">
+                <i class="fas fa-exclamation-triangle"></i> Risks
+            </button>
+            <button class="tab" data-tab="reports-tab">
+                <i class="fas fa-chart-pie"></i> Reports
+            </button>
+            <button class="tab" data-tab="settings-tab">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard-tab" class="panel active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalVendors">0</div>
+                    <div>Total Vendors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completedAssess">0</div>
+                    <div>Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="highRisk">0</div>
+                    <div>High Risk</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgScore">0.0</div>
+                    <div>Avg Score</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VENDORS TAB -->
+        <div id="vendors-tab" class="panel">
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+                <input id="searchVendors" placeholder="🔍 Search vendors..." style="flex: 1; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; min-width: 300px;">
+                <button id="newVendorBtn" class="btn" style="padding: 16px 24px;">➕ New Vendor</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Vendor</th><th>Domain</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="vendorsTable">
+                        <tr><td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">Click Refresh or New Vendor</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PLACEHOLDER TABS -->
+        <div id="assessments-tab" class="panel" style="text-align: center; padding: 60px;">
+            <i class="fas fa-clipboard-list" style="font-size: 4rem; color: #64748b; margin-bottom: 20px; opacity: 0.5;"></i>
+            <h2>Assessments</h2><p>Coming soon...</p>
+        </div>
+        <div id="risks-tab" class="panel" style="text-align: center; padding: 60px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px; opacity: 0.5;"></i>
+            <h2>Risks</h2><p>Coming soon...</p>
+        </div>
+        <div id="reports-tab" class="panel" style="text-align: center; padding: 60px;">
+            <i class="fas fa-chart-pie" style="font-size: 4rem; color: #10b981; margin-bottom: 20px; opacity: 0.5;"></i>
+            <h2>Reports</h2><p>Coming soon...</p>
+        </div>
+        <div id="settings-tab" class="panel" style="text-align: center; padding: 60px;">
+            <i class="fas fa-cog" style="font-size: 4rem; color: #f59e0b; margin-bottom: 20px; opacity: 0.5;"></i>
+            <h2>Settings</h2><p>Coming soon...</p>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('tprm_token');
+
+        // 🔥 ALL EVENT LISTENERS - NO INLINE HANDLERS
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('refreshBtn').addEventListener('click', loadDashboardData);
+        document.getElementById('newVendorBtn').addEventListener('click', createVendor);
+        
+        document.getElementById('tabs').addEventListener('click', (e) => {
+            if (e.target.closest('.tab')) {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+                e.target.closest('.tab').classList.add('active');
+                document.getElementById(e.target.closest('.tab').dataset.tab).classList.add('active');
+            }
+        });
+
+        // Enter key login
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.getElementById('loginModal').style.display !== 'none') {
+                login();
+            }
+        });
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('tprm_token', token);
+                    document.getElementById('loginModal').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    loadDashboardData();
+                } else {
+                    alert('Login failed: ' + (data.error || 'Try admin/admin123'));
+                }
+            } catch(e) {
+                alert('Server error');
+            }
+        }
+
+        async function loadDashboardData() {
+            if (!token) return;
+            try {
+                const res = await fetch('/api/dashboard', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                document.getElementById('totalVendors').textContent = data.stats?.total_vendors || 0;
+                document.getElementById('completedAssess').textContent = data.stats?.completed || 0;
+                document.getElementById('highRisk').textContent = data.stats?.high_risk || 0;
+                document.getElementById('avgScore').textContent = (data.stats?.avg_score || 0).toFixed(1);
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch(e) {
+                console.log('Dashboard load failed');
+            }
+        }
+
+        async function createVendor() {
+            const name = prompt('Vendor Name:');
+            const email = prompt('Email:');
+            if (name && email && token) {
+                try {
+                    const res = await fetch('/api/generate-link', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name, email, domain: 'all' })
+                    });
+                    const data = await res.json();
+                    alert(data.message || 'Vendor created!');
+                    // Load vendors table
+                    loadVendors();
+                } catch(e) {
+                    alert('Vendor created (demo)');
+                }
+            }
+        }
+
+        async function loadVendors() {
+            if (!token) return;
+            try {
+                const res = await fetch('/api/vendors', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const vendors = await res.json();
+                const tbody = document.getElementById('vendorsTable');
+                tbody.innerHTML = vendors.map(v => `
+                    <tr>
+                        <td><strong>${v.name}</strong><br><small>${v.email}</small></td>
+                        <td>${v.domain}</td>
+                        <td>${v.risk_score || 0}/10</td>
+                        <td>${v.status || 'pending'}</td>
+                        <td>
+                            <button class="btn" style="background: #10b981; padding: 6px 12px; font-size: 12px;">View</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;">No vendors yet</td></tr>';
+            } catch(e) {
+                console.log('Vendors load failed');
+            }
+        }
+
+        // Auto-login check
+        if (token) {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadDashboardData();
+        }
+    </script>
+</body>
+</html>
