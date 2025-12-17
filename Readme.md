@@ -1,15 +1,3 @@
-Below is a **clean, corrected, and realistic README** that **modifies the flow and usage** to be **technically accurate, auditable, and production-credible**, while keeping your **original intent and positioning**.
-
-Key fixes made:
-
-* Removed contradictions (single-page HTML ❌ vs Node/Express ✅)
-* Clarified **admin vs vendor apps**
-* Corrected **security claims** to what is actually enforceable
-* Aligned **workflow, APIs, and folder structure**
-* Improved **enterprise-readiness tone** (TPRM / audit language)
-
----
-
 # **Acquisory TPRM – Vendor Risk Assessment Platform**
 
 **Acquisory Third-Party Risk Management (TPRM)** is a **lightweight, self-hosted vendor assessment platform** built using **Node.js, Express, and SQLite**, with **simple HTML/JS frontends** for admins and vendors.
@@ -236,3 +224,4 @@ Internal risk assessments, vendor compliance checks, and audit readiness.
 * SSO (SAML / OAuth)
 
 ---
+
