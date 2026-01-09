@@ -1,126 +1,100 @@
-# **Acquisory TPRM – Vendor Risk Assessment Platform** v3.0 **(100% COMPLETE)**
+# 🛡️ CyberVendor Enterprise Portal
 
-**Production-ready Third-Party Risk Management (TPRM) platform** with **FULL CRUD**, vendor assessments, file uploads, CSV exports, user management, and real-time risk scoring.
+A lightweight, persistent Vendor Risk Management (VRM) platform designed to streamline security assessments. This tool allows admins to build custom control templates, register vendors, and collect evidence directly into a permanent SQLite database.
 
-✅ **100% Self-hosted** | ✅ **Production Secure** | ✅ **All Tabs Documented**
+## 🚀 Features
 
-***
+* **Persistent Storage**: Powered by SQLite—no data is lost on browser refresh or server restart.
+* **Dynamic Template Builder**: Create specific questionnaires (e.g., "High Risk," "SaaS") from a master control bank.
+* **Evidence Management**: Vendors can upload files (PDFs, images) which are stored locally on the server.
+* **Automated Scoring**: Real-time risk scoring based on weighted control values.
+* **PDF Reporting**: Generate professional audit reports for compliance records.
+* **Role-Based Views**: Separate interfaces for Administrators and Vendors.
 
-## **🚀 Quick Start (2 Minutes)**
+---
 
+## 🛠️ Technology Stack
+
+| Component | Technology |
+| --- | --- |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Backend** | Node.js, Express.js |
+| **Database** | SQLite3 |
+| **File Handling** | Multer |
+| **Reporting** | jsPDF, jsPDF-AutoTable |
+
+---
+
+## 📂 Project Structure
+
+```text
+cybervendor-portal/
+├── Public/
+│   └── index.html      # Frontend portal & logic
+├── uploads/            # Folder for vendor evidence files
+├── server.js           # Node.js API & SQLite configuration
+├── cybervendor.db      # The SQLite database file (auto-generated)
+├── .env                # Environment variables (Port, DB file path)
+└── package.json        # Project dependencies
+
+```
+
+---
+
+## ⚙️ Installation & Setup
+
+1. **Install Node.js**: Ensure you have Node.js installed on your machine.
+2. **Initialize Project**:
 ```bash
-npm install express bcrypt jsonwebtoken sqlite3 helmet cors multer express-rate-limit nodemailer dotenv
+npm install
+
+```
+
+
+3. **Install Dependencies**:
+```bash
+npm install express sqlite3 multer cors dotenv
+
+```
+
+
+4. **Run the Server**:
+```bash
 node server.js
-```
-
-**Login:** `http://localhost:4000` → **admin** / **admin123**
-
-***
-
-## **📱 Frontend Tabs - What Each Does**
-
-| Tab | URL | Purpose | Key Features | Endpoints |
-|-----|-----|---------|--------------|-----------|
-| **Dashboard** | `/dashboard` | **Overview & Stats** | Total vendors, completion %, high-risk count, avg risk score | `GET /api/dashboard` |
-| **Vendors** | `/vendors` | **Vendor CRUD** | Add/edit/delete vendors, bulk upload, search/filter, risk levels | `GET/POST/PUT/DELETE /api/vendors*` |
-| **Users** | `/users` | **User Management** | Create admin/reviewers, list users, delete users, roles | `GET/POST/DELETE /api/users*` |
-| **Pending** | `/pending` | **Track Incomplete** | Shows vendors/controls with gaps: "Not Responded", "Evidence Pending", "Justification Pending" | `GET /api/pending-responses` |
-| **Risk** | `/risks` | **Risk Overview** | Color-coded risk levels (Low/Green, Medium/Yellow, High/Red), prioritize follow-ups | Risk calc in `/api/vendors` |
-| **Settings** | `/settings` | **Config & Questions** | Edit TPRM questions, email status, file size limits, database info | `GET /api/settings` |
-| **Export** | `/export` | **CSV Downloads** | vendors.csv (all fields), control_responses.csv (evidence tracking) | `GET /api/export/*` |
-
-***
-
-## **🔐 Security & Production Features**
-
-- **JWT Authentication** + Admin roles
-- **Rate Limiting** (Login:5, API:100, Vendors:50/hr)
-- **File Uploads** (PDF/DOCX/XLSX/JPG/PNG - 25MB max)
-- **CORS** + Helmet CSP
-- **SQL Injection Safe** parameterized queries
-- **Graceful Shutdown** + SQLite indexing
-
-***
-
-## **🛠️ Technology Stack**
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Backend** | Node.js + Express | REST API Server |
-| **Database** | SQLite3 | Production TPRM Data |
-| **Authentication** | JWT + bcrypt | Admin Role Security |
-| **File Uploads** | Multer | Evidence Documents |
-| **Security** | Helmet + CORS | CSP + Cross-Origin |
-| **Rate Limiting** | express-rate-limit | API Protection |
-
-***
-
-## **🌐 Complete API Reference**
-
-### **Authentication & Users**
-```
-POST  /api/login              # admin/admin123
-GET   /api/users              # List all users → /users tab
-POST  /api/users              # {username, password, role="user"}
-DELETE /api/users/:id         # Delete user → /users tab
-```
-
-### **Vendors (Full CRUD)**
-```
-GET   /api/vendors            # ?search=abc&status=pending → /vendors tab
-POST  /api/vendors            # Bulk: {vendors: [{name,email,domain,...}]}
-PUT   /api/vendors/:id        # Update vendor → /vendors tab
-DELETE /api/vendors/:id       # Delete vendor → /vendors tab
-```
-
-### **Dashboard & Analytics**
-```
-GET /api/dashboard            # Stats → /dashboard tab
-GET /api/pending-responses    # Incomplete tracking → /pending tab
-```
-
-### **Exports**
-```
-GET /api/export/vendors       # vendors.csv → /export tab
-GET /api/export/responses     # control_responses.csv → /export tab
-```
-
-### **Vendor Assessment**
-```
-POST  /api/generate-link      # Email secure URL → /vendors tab
-GET   /api/vendor/:vendorId   # Load questions for vendor
-POST  /api/vendor/:vendorId/respond  # Submit + files
-```
-
-***
-
-## **📁 Folder Structure**
 
 ```
-project/
-├── server.js                 # ✅ COMPLETE API
-├── package.json             # ✅ Auto-generated
-├── tprm-production.db       # ✅ Auto-created
-├── uploads/                 # ✅ Evidence files
-├── public/                  # ✅ SPA HTML files (all tabs)
-└── .env                     # Optional config
+
+
+5. **Access the App**: Open your browser and go to `http://localhost:3000`.
+
+---
+
+## 📖 How to Use
+
+### For Administrators
+
+1. **Auth**: Log in with the default password (`admin123`).
+2. **Build**: Select controls in the **Template Builder**, name it, and save.
+3. **Register**: Add a new company in the **Vendor Inventory**.
+4. **Assign**: Select a vendor card, then click a "Saved Template" button to assign those questions.
+5. **Audit**: Review vendor responses and evidence, then click **Export PDF** to save the final result.
+
+### For Vendors
+
+1. Select your organization from the **Vendor Login** dropdown.
+2. Complete the assigned security questions.
+3. Upload required documents (SOC2, Privacy Policy, etc.).
+4. Click **Submit Assessment**.
+
+---
+
+## 🛡️ Maintenance & Backup
+
+* **Backup**: Simply copy the `cybervendor.db` file and the `/uploads` folder to a secure location.
+* **Deployment**: To keep the app running 24/7, use **PM2**:
+```bash
+npm install -g pm2
+pm2 start server.js --name "cybervendor"
+pm2 save
+
 ```
-
-***
-
-## **✅ Server Startup**
-
-```
-🚀 Acquisory TPRM PRODUCTION v3.0 - 100% COMPLETE
-📍 Server:      http://localhost:4000
-👤 Login:      admin / admin123
-📊 Dashboard:  http://localhost:4000/dashboard
-🏢 Vendors:    http://localhost:4000/vendors  ← Full CRUD
-👥 Users:      http://localhost:4000/users    ← User management
-❌ Pending:    http://localhost:4000/pending  ← Track gaps
-⚙️  Settings:  http://localhost:4000/settings ← Config
-```
-
-***
-
-**🎉 NOW 100% COMPLETE - Every tab's purpose, features, and endpoints documented!**
