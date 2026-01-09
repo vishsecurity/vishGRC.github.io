@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CyberVendor - Admin & Vendor Portal</title>
+    <style>
+        :root { --primary: #1e40af; --bg: #f1f5f9; --card: #ffffff; --border: #cbd5e1; --high: #ef4444; --low: #10b981; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 1400px; margin: auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Navigation & Role Switcher */
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; }
+        .role-btn { background: #334155; color: white; border: 1px solid #475569; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .role-btn.active { background: var(--primary); border-color: var(--primary); }
+
+        /* Dashboard Mini */
+        .dash-flex { display: flex; gap: 15px; margin-bottom: 20px; }
+        .stat-box { flex: 1; background: #fff; padding: 15px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
+
+        /* Template Area */
+        .template-panel { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        
+        /* Grid */
+        .vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .vendor-card { padding: 15px; background: #fff; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .vendor-card.active { border: 2px solid var(--primary); background: #f0f9ff; }
+
+        /* Checklist */
+        .check-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; background: white; padding: 10px; border: 1px solid #ddd; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f8fafc; text-align: left; padding: 12px; border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+
+        .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #059669; color: white; }
+        .q-id { font-family: monospace; font-weight: bold; color: var(--primary); background: #dbeafe; padding: 2px 4px; border-radius: 4px; font-size: 0.75rem; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-bar">
+        <span>🛡️ CyberVendor Enterprise</span>
+        <div>
+            <button id="btnVendorView" class="role-btn active" onclick="setView('vendor')">Vendor Access</button>
+            <button id="btnAdminView" class="role-btn" onclick="setView('admin')">Admin Portal</button>
+        </div>
+    </div>
+
+    <div id="adminSection" class="hidden">
+        <div class="dash-flex">
+            <div class="stat-box">Total Vendors: <b id="stat-count">0</b></div>
+            <div class="stat-box">Portfolio Average: <b id="stat-avg">0%</b></div>
+        </div>
+
+        <div class="card template-panel">
+            <h3>1. Template Builder</h3>
+            <p style="font-size:0.85rem">Define series (e.g. 'SaaS') and map controls. Vendors only see assigned templates.</p>
+            <div id="masterChecklist" class="check-list"></div>
+            <div style="margin-top:10px; display:flex; gap:10px;">
+                <input type="text" id="tplName" placeholder="Template Name (e.g. SaaS - High Privacy)" style="flex:1; padding:8px;">
+                <button class="btn btn-primary" onclick="saveTemplate()">💾 Save Template</button>
+            </div>
+            <div id="savedTemplates" style="margin-top:10px; display:flex; gap:5px; flex-wrap:wrap;"></div>
+        </div>
+
+        <div class="card">
+            <h3>2. Vendor Inventory</h3>
+            <div id="vendorGrid" class="vendor-grid"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="vName" placeholder="Company Name" style="flex:1; padding:10px;">
+                <button class="btn btn-primary" onclick="addVendor()">+ Register Vendor</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="vendorSelection" class="card">
+        <h3>Vendor Login</h3>
+        <p>Please select your organization to access your specific security questionnaire:</p>
+        <select id="vendorPicker" onchange="loadAudit(this.value)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <option value="">-- Select Your Organization --</option>
+        </select>
+    </div>
+
+    <div id="workspace" class="card" style="display:none;">
+        <h2 id="currentTitle">Audit</h2>
+        <p>Questionnaire: <b id="activeTemplateName">Custom</b></p>
+        <table>
+            <thead>
+                <tr><th width="40%">Control ID & Name</th><th>Response</th><th>Evidence / Remarks</th></tr>
+            </thead>
+            <tbody id="auditRows"></tbody>
+        </table>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-success" onclick="saveAudit()">💾 Submit Assessment</button>
+            <button id="adminOnlyExport" class="btn btn-primary hidden" onclick="exportVendorData()">📊 Export Data (Admin)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let masterBank = [
+        {id: "AC-01", name: "MFA Enforced", w: 3},
+        {id: "DS-02", name: "Data Encryption", w: 3},
+        {id: "PH-03", name: "Physical Guarding", w: 1},
+        {id: "PR-04", name: "Privacy Policy", w: 1},
+        {id: "SC-05", name: "SOC2 Report", w: 2}
+    ];
+
+    let db = JSON.parse(localStorage.getItem('tpl_db')) || {};
+    let templates = JSON.parse(localStorage.getItem('tpl_lib')) || {};
+    let activeVendor = null;
+
+    function init() {
+        const list = document.getElementById('masterChecklist');
+        list.innerHTML = masterBank.map(c => `
+            <label><input type="checkbox" class="tpl-check" value="${c.id}"> <span class="q-id">${c.id}</span> ${c.name}</label>
+        `).join('');
+        renderTemplates();
+        renderVendors();
+        updateVendorPicker();
+    }
+
+    function setView(role) {
+        if(role === 'admin') {
+            const pass = prompt("Enter Admin Password:");
+            if(pass !== "admin123") return alert("Access Denied");
+            
+            document.getElementById('adminSection').classList.remove('hidden');
+            document.getElementById('vendorSelection').classList.add('hidden');
+            document.getElementById('adminOnlyExport').classList.remove('hidden');
+            document.getElementById('btnAdminView').classList.add('active');
+            document.getElementById('btnVendorView').classList.remove('active');
+        } else {
+            document.getElementById('adminSection').classList.add('hidden');
+            document.getElementById('vendorSelection').classList.remove('hidden');
+            document.getElementById('adminOnlyExport').classList.add('hidden');
+            document.getElementById('btnVendorView').classList.add('active');
+            document.getElementById('btnAdminView').classList.remove('active');
+        }
+    }
+
+    function saveTemplate() {
+        const name = document.getElementById('tplName').value.trim();
+        const checked = Array.from(document.querySelectorAll('.tpl-check:checked')).map(c => c.value);
+        if (name && checked.length) {
+            templates[name] = checked;
+            localStorage.setItem('tpl_lib', JSON.stringify(templates));
+            renderTemplates();
+            document.getElementById('tplName').value = '';
+        }
+    }
+
+    function renderTemplates() {
+        const div = document.getElementById('savedTemplates');
+        div.innerHTML = Object.keys(templates).map(t => `
+            <button class="btn" style="font-size:0.7rem; background:#dbeafe" onclick="applyTemplateToActive('${t}')">Apply ${t}</button>
+        `).join('');
+    }
+
+    function addVendor() {
+        const name = document.getElementById('vName').value.trim();
+        if (name) {
+            db[name] = { score: 0, activeIds: [], data: {}, templateName: 'Not Assigned' };
+            saveDB(); renderVendors(); updateVendorPicker();
+            document.getElementById('vName').value = '';
+        }
+    }
+
+    function updateVendorPicker() {
+        const sel = document.getElementById('vendorPicker');
+        sel.innerHTML = `<option value="">-- Select Your Organization --</option>` + 
+                        Object.keys(db).map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+
+    function applyTemplateToActive(tName) {
+        if (!activeVendor) return alert("Select a vendor from the Inventory first");
+        db[activeVendor].activeIds = templates[tName];
+        db[activeVendor].templateName = tName;
+        saveDB(); loadAudit(activeVendor);
+    }
+
+    function loadAudit(name) {
+        if(!name) { document.getElementById('workspace').style.display = 'none'; return; }
+        activeVendor = name;
+        renderVendors();
+        document.getElementById('workspace').style.display = 'block';
+        document.getElementById('currentTitle').innerText = name;
+        document.getElementById('activeTemplateName').innerText = db[name].templateName;
+
+        const tbody = document.getElementById('auditRows');
+        const activeQs = masterBank.filter(q => db[name].activeIds.includes(q.id));
+        
+        tbody.innerHTML = activeQs.map(q => {
+            const saved = db[name].data[q.id] || { res: 'Pending', rem: '' };
+            return `<tr>
+                <td><span class="q-id">${q.id}</span> ${q.name}</td>
+                <td><select id="res-${q.id}" style="width:100%; padding:5px;">
+                    <option value="Pending" ${saved.res==='Pending'?'selected':''}>Pending</option>
+                    <option value="Pass" ${saved.res==='Pass'?'selected':''}>Pass</option>
+                    <option value="Fail" ${saved.res==='Fail'?'selected':''}>Fail</option>
+                </select></td>
+                <td><input id="rem-${q.id}" value="${saved.rem}" placeholder="Evidence details..." style="width:100%; padding:5px;"></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function saveAudit() {
+        const activeQs = masterBank.filter(q => db[activeVendor].activeIds.includes(q.id));
+        let totalW = 0, earnedW = 0;
+        activeQs.forEach(q => {
+            const res = document.getElementById(`res-${q.id}`).value;
+            db[activeVendor].data[q.id] = { res, rem: document.getElementById(`rem-${q.id}`).value };
+            if(res !== 'Pending') {
+                totalW += q.w;
+                if (res === 'Pass') earnedW += q.w;
+            }
+        });
+        db[activeVendor].score = totalW ? Math.round((earnedW/totalW)*100) : 0;
+        saveDB(); renderVendors();
+        alert("Assessment submitted for " + activeVendor);
+    }
+
+    function renderVendors() {
+        const grid = document.getElementById('vendorGrid');
+        grid.innerHTML = Object.keys(db).map(name => `
+            <div class="vendor-card ${activeVendor === name ? 'active' : ''}" onclick="loadAudit('${name}')">
+                <strong>${name}</strong><br><small>Template: ${db[name].templateName}</small>
+                <div style="color:var(--primary); font-weight:bold">${db[name].score}%</div>
+            </div>
+        `).join('');
+        updateStats();
+    }
+
+    function updateStats() {
+        const keys = Object.keys(db);
+        document.getElementById('stat-count').innerText = keys.length;
+        let sum = keys.reduce((a, b) => a + db[b].score, 0);
+        document.getElementById('stat-avg').innerText = keys.length ? Math.round(sum/keys.length) + "%" : "0%";
+    }
+
+    function saveDB() { localStorage.setItem('tpl_db', JSON.stringify(db)); }
+    init();
+</script>
+</body>
+</html>
