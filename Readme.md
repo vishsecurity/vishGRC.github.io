@@ -1,4 +1,4 @@
-# 🛡️ **GRC Enterprise Portal** (Updated - Clean)
+# 🛡️ **GRC Enterprise Portal**
 
 A lightweight, persistent **Vendor Risk Management (VRM)** platform designed to streamline RBI IT GRC security assessments. This tool allows admins to build custom control templates (ISO 27001, RBI guidelines), register vendors like **TATA Motors**, and collect evidence directly into **`grc.db`**.
 
@@ -147,3 +147,4 @@ http://localhost:3000/debug       # Database status
 **Enterprise GRC portal ready for TATA Motors + RBI compliance!** 🎉
 
 ***
+
