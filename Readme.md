@@ -147,5 +147,3 @@ http://localhost:3000/debug       # Database status
 **Enterprise GRC portal ready for TATA Motors + RBI compliance!** 🎉
 
 ***
-
-**✅ Removed all `cybervendor.db` references - Clean `grc.db` only!**
