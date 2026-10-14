@@ -1,6 +1,52 @@
 # GovernanceGuard
 
-A local-first GRC audit workbench pairing a browser interface with a Node.js/Express API and a persistent SQLite database.
+GovernanceGuard is a local-first governance, risk, and compliance (GRC) workspace designed to help teams manage audit planning, risk registers, controls, AI oversight, regulatory obligations, and board-ready reporting in one place. It combines a browser-based dashboard with a Node.js/Express API and a persistent SQLite database so organizations can track operational governance work without a large enterprise SaaS stack.
+
+## What this tool is
+
+This project is a practical GRC dashboard for:
+
+- Managing risk and control registers
+- Tracking audit programs, tests, findings, and evidence
+- Monitoring regulatory obligations and deadlines
+- Reviewing AI systems and AI risk items
+- Producing a board-level snapshot and summary view
+- Keeping one workspace profile and access roles for internal governance work
+
+It is designed as a local prototype and internal management tool, not a substitute for legal advice, external audit certification, or enterprise-grade compliance SaaS.
+
+## Required dependencies and plugins
+
+This project requires:
+
+- Node.js 20+
+- npm
+- Express
+- better-sqlite3
+- multer
+
+Installed from the project dependencies in `package.json`:
+
+```json
+"dependencies": {
+  "better-sqlite3": "^11.10.0",
+  "express": "^5.1.0",
+  "multer": "^2.4.0"
+}
+```
+
+## Project files
+
+- `server.js` — Node.js/Express app, authentication, routing, validation, file upload handling, and startup logic.
+- `database.js` — SQLite schema, seed records, and data initialization.
+- `index.html` — Main GRC dashboard and workspace UI.
+- `login.html` — Sign-in page for unauthenticated users.
+- `setup.html` — First-time admin setup page for new workspaces.
+- `assets/` — Branding files such as the logo and mark.
+- `data/` — Runtime database and evidence storage directory.
+- `test/api.test.js` — Automated API and persistence tests.
+- `package.json` and `package-lock.json` — Dependency and script configuration.
+- `credentail.md` — Local credentials / setup notes for reference during development.
 
 ## Run locally
 
@@ -123,6 +169,42 @@ Attach files to individual audit workpaper tests. PDF, PNG, JPEG, GIF, WebP, and
 
 The board report and overview use current stored risks, controls, audit tests/findings/evidence, obligations, and AI records. Figures are live register snapshots, not historical trends: the application does not maintain period-end snapshots and does not claim a change over time. The board pack export is a CSV snapshot. Review its scope and validate the information before distributing it.
 
+## Workflow
+
+GovernanceGuard is intended to follow a simple operational workflow for a compliance or internal audit team:
+
+1. **Set up workspace**
+   - Create the first admin account.
+   - Define the organization name and workspace label.
+   - Set user roles for Admin, Editor, and Viewer.
+
+2. **Capture governance context**
+   - Add risk registers, control library entries, and regulatory obligations.
+   - Assign owners, review dates, and status values.
+   - Capture AI system and AI risk inventory when relevant.
+
+3. **Plan audits and tests**
+   - Create an audit program with scope, criteria, objective, and timeline.
+   - Add audit tests and expected evidence.
+   - Record testing procedures and sampling rationale.
+
+4. **Perform execution**
+   - Run each test, record result and notes.
+   - Attach evidence files such as PDFs, screenshots, or spreadsheets.
+   - Track workpaper status as the audit moves forward.
+
+5. **Report findings and actions**
+   - Raise issues with criteria, condition, cause, impact, and owner.
+   - Assign due dates and track remediation status.
+   - Maintain retest and closure evidence for follow-up.
+
+6. **Monitor and report upward**
+   - Review live KRI and control effectiveness summaries.
+   - Check open actions and board-level status.
+   - Export board reports or CSV snapshots for leadership.
+
+This workflow keeps governance, compliance, and audit work connected in one operational loop instead of separate disconnected spreadsheets.
+
 ## ISO 19011-informed workflow
 
 The audit workbench is designed around a practical audit lifecycle:
@@ -136,6 +218,47 @@ The audit workbench is designed around a practical audit lifecycle:
 The UI also surfaces the auditing principles of integrity, fair presentation, due professional care, confidentiality, independence, evidence-based and risk-based approaches, plus auditor competence as a practical quality prompt.
 
 ISO 19011 is guidance for auditing management systems; it is not itself the audit criteria for determining an organization's conformity. For each engagement, enter the requirements that apply to the scope—such as an ISO management-system standard, NIST framework, regulation, contract, or internal policy—and use licensed authoritative materials. This project intentionally does not reproduce standard text or claim compliance, certification, legal advice, or an audit opinion.
+
+## Full folder and file list
+
+### Root folders
+
+- `assets/` — branding and logo images used by the UI
+- `data/` — SQLite database and uploaded evidence storage
+- `test/` — automated API test files
+
+### Root files
+
+- `README.md` — project documentation and setup guide
+- `package.json` — project metadata and dependencies
+- `package-lock.json` — lockfile for installed packages
+- `server.js` — main Node.js/Express server and API logic
+- `database.js` — SQLite schema, seed data, and DB initialization
+- `index.html` — main dashboard interface
+- `login.html` — login screen
+- `setup.html` — first-time workspace setup screen
+- `credentail.md` — local credential notes
+
+### Generated runtime files
+
+- `data/grc.sqlite` — created automatically at runtime
+- `data/evidence/` — created automatically for uploaded attachments
+
+### Packages used
+
+```json
+"dependencies": {
+  "better-sqlite3": "^11.10.0",
+  "express": "^5.1.0",
+  "multer": "^2.4.0"
+}
+```
+
+Install them with:
+
+```bash
+npm install
+```
 
 ## API
 
